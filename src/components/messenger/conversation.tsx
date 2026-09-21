@@ -224,7 +224,7 @@ export function Conversation({ className }: { className?: string }) {
           />
         </div>
       ) : null}
-      <div className="stage-paper min-h-0 flex-1">
+      <div className="stage-paper flex min-h-0 flex-1 flex-col overflow-hidden">
         <SearchableThread chatId={activeChat.id} query={searchOpen ? query : ""} />
       </div>
       <Composer

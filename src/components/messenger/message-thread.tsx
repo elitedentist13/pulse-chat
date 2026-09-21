@@ -30,7 +30,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+      <div className="flex h-full flex-1 flex-col items-center justify-center px-8 text-center">
         {chat?.kind === "group" ? (
           <div className="mb-8 w-full max-w-md">
             <RoomIntro chat={chat} members={members} youId={you.id} />
@@ -45,7 +45,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
   }
 
   return (
-    <div className="min-h-0 w-full flex-1 overflow-y-auto px-4 py-6 md:px-10">
+    <div className="h-full min-h-0 w-full flex-1 overflow-y-auto px-4 py-6 md:px-10">
       <div className="mx-auto max-w-2xl">
         {chat?.kind === "group" ? (
           <RoomIntro chat={chat} members={members} youId={you.id} />
