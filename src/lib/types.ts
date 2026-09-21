@@ -64,6 +64,56 @@ export type Pet = {
   color: string
   initials: string
   portrait?: string
+  nickname: string
+  origin: string
+  traits: string
+  features: string
+  favoriteFood: string
+  fears: string
+  specialNotes: string
+  remarks: string
+  medicalRemarks: string
+  favoriteSnacks: string
+  cannedFood: string
+  currentFood: string
+}
+
+export type PetTab = "profile" | "pages" | "care" | "talent"
+
+export type CareKind =
+  | "visit"
+  | "blood"
+  | "receipt"
+  | "prescription"
+  | "groom"
+  | "food"
+
+export type CareRecord = {
+  id: string
+  petId: string
+  kind: CareKind
+  date: string
+  title: string
+  detail: string
+  meta: string
+  attachments: DiaryPhoto[]
+}
+
+export type PreventativeReminder = {
+  id: string
+  petId: string
+  label: string
+  lastGiven: string
+  intervalMonths: number
+  note: string
+}
+
+export type Talent = {
+  id: string
+  petId: string
+  name: string
+  cue: string
+  description: string
 }
 
 export type EntryVisibility = "private" | "public"
@@ -108,4 +158,7 @@ export type MessengerSnapshot = {
   pets: Pet[]
   entries: DiaryEntry[]
   stories: Story[]
+  careRecords: CareRecord[]
+  reminders: PreventativeReminder[]
+  talents: Talent[]
 }

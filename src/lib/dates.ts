@@ -20,8 +20,8 @@ export function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate()
 }
 
-export function formatDiaryDate(key: string) {
-  return fromDateKey(key).toLocaleDateString(undefined, {
+export function formatDiaryDate(key: string, locale = "en") {
+  return fromDateKey(key).toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -29,8 +29,8 @@ export function formatDiaryDate(key: string) {
   })
 }
 
-export function formatDiaryShort(key: string) {
-  return fromDateKey(key).toLocaleDateString(undefined, {
+export function formatDiaryShort(key: string, locale = "en") {
+  return fromDateKey(key).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
   })
@@ -48,6 +48,26 @@ export function inDateRange(date: string, start: string, end: string) {
   return date >= start && date <= end
 }
 
-export function formatRange(start: string, end: string) {
-  return `${formatDiaryShort(start)} – ${formatDiaryShort(end)}`
+export function formatRange(start: string, end: string, locale = "en") {
+  return `${formatDiaryShort(start, locale)} – ${formatDiaryShort(end, locale)}`
+}
+
+export function ageYears(birthday: string, now = new Date()) {
+  const born = fromDateKey(birthday)
+  let years = now.getFullYear() - born.getFullYear()
+  const monthDelta = now.getMonth() - born.getMonth()
+  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < born.getDate())) {
+    years -= 1
+  }
+  return Math.max(0, years)
+}
+
+export function addMonths(key: string, months: number) {
+  const date = fromDateKey(key)
+  date.setMonth(date.getMonth() + months)
+  return toDateKey(date)
+}
+
+export function reminderDue(lastGiven: string, intervalMonths: number) {
+  return addMonths(lastGiven, intervalMonths)
 }

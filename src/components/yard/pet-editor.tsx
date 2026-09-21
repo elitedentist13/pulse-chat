@@ -11,12 +11,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { useLocale } from "@/lib/locale"
 import { compressPhoto } from "@/lib/photos"
 import { useMessenger } from "@/lib/messenger-store"
 import type { Pet, PetKind } from "@/lib/types"
 import { useState } from "react"
 
-const KINDS: PetKind[] = ["dog", "cat", "other"]
+const KINDS: { id: PetKind; label: "kindDog" | "kindCat" | "kindOther" }[] = [
+  { id: "dog", label: "kindDog" },
+  { id: "cat", label: "kindCat" },
+  { id: "other", label: "kindOther" },
+]
 
 export function PetEditor({
   open,
@@ -49,7 +54,8 @@ function PetForm({
   pet?: Pet | null
   onDone: () => void
 }) {
-  const { you, savePet } = useMessenger()
+  const { you, savePet, setPetTab } = useMessenger()
+  const { t } = useLocale()
   const [name, setName] = useState(pet?.name ?? "")
   const [kind, setKind] = useState<PetKind>(pet?.kind ?? "dog")
   const [breed, setBreed] = useState(pet?.breed ?? "")
@@ -78,20 +84,33 @@ function PetForm({
       ownerId: you.id,
       name: trimmed,
       kind,
-      breed: breed.trim() || "Companion",
+      breed: breed.trim() || t("companion"),
       birthday,
       about: about.trim(),
       color,
       initials,
       portrait,
+      nickname: pet?.nickname ?? "",
+      origin: pet?.origin ?? "",
+      traits: pet?.traits ?? "",
+      features: pet?.features ?? "",
+      favoriteFood: pet?.favoriteFood ?? "",
+      fears: pet?.fears ?? "",
+      specialNotes: pet?.specialNotes ?? "",
+      remarks: pet?.remarks ?? "",
+      medicalRemarks: pet?.medicalRemarks ?? "",
+      favoriteSnacks: pet?.favoriteSnacks ?? "",
+      cannedFood: pet?.cannedFood ?? "",
+      currentFood: pet?.currentFood ?? "",
     })
+    setPetTab("profile")
     onDone()
   }
 
   const preview: Pet = {
     id: "preview",
     ownerId: you.id,
-    name: name || "Name",
+    name: name || t("fieldName"),
     kind,
     breed,
     birthday,
@@ -99,43 +118,64 @@ function PetForm({
     color,
     initials: (name || "P").slice(0, 2).toUpperCase(),
     portrait,
+    nickname: pet?.nickname ?? "",
+    origin: pet?.origin ?? "",
+    traits: pet?.traits ?? "",
+    features: pet?.features ?? "",
+    favoriteFood: pet?.favoriteFood ?? "",
+    fears: pet?.fears ?? "",
+    specialNotes: pet?.specialNotes ?? "",
+    remarks: pet?.remarks ?? "",
+    medicalRemarks: pet?.medicalRemarks ?? "",
+    favoriteSnacks: pet?.favoriteSnacks ?? "",
+    cannedFood: pet?.cannedFood ?? "",
+    currentFood: pet?.currentFood ?? "",
   }
 
   return (
     <>
       <div className="flex flex-col items-center bg-[#efe8dc] px-6 pt-14 pb-6">
-        <PetAvatar pet={preview} size="xl" />
+        <label className="relative cursor-pointer" data-change-portrait>
+          <PetAvatar pet={preview} size="xl" />
+          <span className="mt-2 block text-center text-xs text-[#6e6458]">
+            {t("clickPictureShort")}
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(event) => onFile(event.target.files?.[0])}
+          />
+        </label>
         <SheetHeader className="items-center p-0 pt-4">
           <SheetTitle className="font-heading text-2xl">
-            {pet ? "Companion" : "A new companion"}
+            {pet ? t("companion") : t("newCompanion")}
           </SheetTitle>
-          <SheetDescription>
-            The profile stays on the daybook. The stories are the years.
-          </SheetDescription>
+          <SheetDescription>{t("profileStays")}</SheetDescription>
         </SheetHeader>
       </div>
       <div className="space-y-3 px-5 py-4">
         <Input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Name"
+          placeholder={t("fieldName")}
         />
         <div className="flex gap-2">
           {KINDS.map((item) => (
             <Button
-              key={item}
+              key={item.id}
               type="button"
-              variant={kind === item ? "default" : "outline"}
-              onClick={() => setKind(item)}
+              variant={kind === item.id ? "default" : "outline"}
+              onClick={() => setKind(item.id)}
             >
-              {item}
+              {t(item.label)}
             </Button>
           ))}
         </div>
         <Input
           value={breed}
           onChange={(event) => setBreed(event.target.value)}
-          placeholder="Breed or kind"
+          placeholder={t("breedOrKind")}
         />
         <Input
           type="date"
@@ -145,10 +185,10 @@ function PetForm({
         <Textarea
           value={about}
           onChange={(event) => setAbout(event.target.value)}
-          placeholder="What they keep doing."
+          placeholder={t("whatTheyKeepDoing")}
         />
         <label className="flex items-center gap-3 text-sm text-[#6e6458]">
-          Portrait
+          {t("portrait")}
           <input
             type="file"
             accept="image/*"
@@ -157,7 +197,7 @@ function PetForm({
           />
         </label>
         <Button type="button" className="w-full" onClick={submit}>
-          Keep this profile
+          {t("keepProfile")}
         </Button>
       </div>
     </>

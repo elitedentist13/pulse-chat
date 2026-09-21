@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLocale } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 
 const EMOJIS = ["🙂", "😂", "🙏", "🔥", "✨", "👍", "❤️", "☕", "🌿", "🌙", "✉️", "📍"]
@@ -23,6 +24,7 @@ export function Composer({
   toName: string
   address?: "to" | "in"
 }) {
+  const { t } = useLocale()
   const [value, setValue] = useState("")
   const [emojiOpen, setEmojiOpen] = useState(false)
   const areaRef = useRef<HTMLTextAreaElement>(null)
@@ -60,7 +62,7 @@ export function Composer({
                 variant="ghost"
                 size="icon"
                 className="size-9 shrink-0 text-[#6e6458] hover:bg-[#efe8dc] hover:text-[#1c1814]"
-                aria-label="Add emoji"
+                aria-label={t("addEmoji")}
               />
             }
           >
@@ -90,15 +92,13 @@ export function Composer({
           variant="ghost"
           size="icon"
           className="size-9 shrink-0 text-[#6e6458] hover:bg-[#efe8dc] hover:text-[#1c1814]"
-          aria-label="Leave a note instead of a file"
-          onClick={() =>
-            onSend("I’ll leave the file on the shared desk instead of pinning it here.")
-          }
+          aria-label={t("leaveNote")}
+          onClick={() => onSend(t("composerFileNote"))}
         >
           <Quote className="size-4" />
         </Button>
         <label className="sr-only" htmlFor="kith-composer">
-          Note
+          {t("note")}
         </label>
         <textarea
           id="kith-composer"
@@ -106,7 +106,7 @@ export function Composer({
           rows={1}
           value={value}
           disabled={disabled}
-          placeholder={`Write ${address} ${toName}`}
+          placeholder={address === "in" ? t("writeIn", { name: toName }) : t("writeTo", { name: toName })}
           className={cn(
             "max-h-[140px] min-h-10 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-[15px] text-[#1c1814] outline-none placeholder:text-[#6e6458]"
           )}
@@ -122,9 +122,9 @@ export function Composer({
           type="submit"
           disabled={disabled || !value.trim()}
           className="h-9 shrink-0 rounded-full bg-[#b4452a] px-3 text-[#fbf7f0] hover:bg-[#9a3a23] disabled:bg-[#e7dccb] disabled:text-[#6e6458]"
-          aria-label="Send message"
+          aria-label={t("sendMessage")}
         >
-          Send
+          {t("send")}
           <ArrowUpRight className="size-4" />
         </Button>
       </div>

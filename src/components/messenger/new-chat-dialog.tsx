@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { useMemo, useState } from "react"
 
@@ -21,6 +22,7 @@ export function NewChatDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { state, you, startChatWith } = useMessenger()
+  const { t } = useLocale()
   const [query, setQuery] = useState("")
 
   const contacts = useMemo(() => {
@@ -44,21 +46,21 @@ export function NewChatDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">
-            Pull up a chair
+            {t("pullUpChair")}
           </DialogTitle>
           <DialogDescription>
-            Find someone you already know and start a note.
+            {t("findSomeone")}
           </DialogDescription>
         </DialogHeader>
         <Input
           value={query}
-          placeholder="Search name or number"
+          placeholder={t("searchNameOrNumber")}
           onChange={(event) => setQuery(event.target.value)}
         />
         <div className="max-h-80 overflow-y-auto">
           {contacts.length === 0 ? (
             <p className="px-1 py-8 text-center text-sm text-[#6e6458]">
-              No one matches “{query}”.
+              {t("noOneMatches", { query })}
             </p>
           ) : (
             <ul>

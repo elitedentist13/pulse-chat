@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
 import {
@@ -41,6 +42,7 @@ export function ChatList({ className }: { className?: string }) {
     resetDemo,
     viewStatus,
   } = useMessenger()
+  const { t } = useLocale()
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [statusId, setStatusId] = useState<string | null>(null)
   const closeStatus = useCallback(() => setStatusId(null), [])
@@ -56,16 +58,15 @@ export function ChatList({ className }: { className?: string }) {
     [contactById, statuses]
   )
 
-  const emptyCopy =
-    state.search.trim()
-      ? `Nothing matches “${state.search.trim()}”.`
-      : state.chatFilter === "unread"
-        ? "Nobody is waiting on you."
-        : state.chatFilter === "groups"
-          ? "The hall is empty."
-          : state.listMode === "archived"
-            ? "The drawer is empty."
-            : "Invite someone to the table."
+  const emptyCopy = state.search.trim()
+    ? t("emptySearch", { query: state.search.trim() })
+    : state.chatFilter === "unread"
+      ? t("emptyUnread")
+      : state.chatFilter === "groups"
+        ? t("emptyHall")
+        : state.listMode === "archived"
+          ? t("emptyDrawer")
+          : t("emptyInvite")
 
   return (
     <section
@@ -80,20 +81,18 @@ export function ChatList({ className }: { className?: string }) {
             type="button"
             className="flex items-center gap-2 text-sm text-[#6e6458] hover:text-[#1c1814]"
             onClick={() => setListMode("chats")}
-            aria-label="Back to chats"
+            aria-label={t("backToChats")}
           >
             <ArrowLeft className="size-4" />
-            Back to the table
+            {t("backToTable")}
           </button>
         ) : (
           <div>
             <p className="font-heading text-3xl leading-none tracking-tight">
-              Notes
+              {t("notes")}
             </p>
             <p className="mt-1 text-sm text-[#6e6458]">
-              {state.chatFilter === "groups"
-                ? "The hall — adjunct rooms"
-                : "Sit down when a porch page needs a reply"}
+              {state.chatFilter === "groups" ? t("hallBlurb") : t("notesBlurb")}
             </p>
           </div>
         )}
@@ -103,7 +102,7 @@ export function ChatList({ className }: { className?: string }) {
             size="icon"
             className="text-[#6e6458] hover:bg-[#e7dccb] hover:text-[#1c1814]"
             onClick={() => setNewChatOpen(true)}
-            aria-label="New chat"
+            aria-label={t("newChat")}
           >
             <PenLine className="size-5" />
           </Button>
@@ -115,7 +114,7 @@ export function ChatList({ className }: { className?: string }) {
                   variant="ghost"
                   size="icon"
                   className="text-[#6e6458] hover:bg-[#e7dccb] hover:text-[#1c1814]"
-                  aria-label="Menu"
+                  aria-label={t("menu")}
                 />
               }
             >
@@ -123,15 +122,15 @@ export function ChatList({ className }: { className?: string }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setNewChatOpen(true)}>
-                Write someone new
+                {t("writeSomeoneNew")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setListMode("archived")}>
-                Filed away
+                {t("filedAway")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={resetDemo}>
                 <RotateCcw className="size-4" />
-                Reset the table
+                {t("resetTable")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -162,7 +161,7 @@ export function ChatList({ className }: { className?: string }) {
                 }}
               >
                 <span className="block font-heading text-sm">
-                  {contact.id === you.id ? "Your mood" : contact.name.split(" ")[0]}
+                  {contact.id === you.id ? t("yourMood") : contact.name.split(" ")[0]}
                 </span>
                 <span className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[#6e6458]">
                   {status.text}
@@ -173,7 +172,9 @@ export function ChatList({ className }: { className?: string }) {
         </div>
       ) : (
         <p className="px-5 pb-3 text-sm text-[#6e6458]">
-          {archivedCount} filed conversation{archivedCount === 1 ? "" : "s"}
+          {t(archivedCount === 1 ? "filedCount" : "filedCountPlural", {
+            count: archivedCount,
+          })}
         </p>
       )}
 
@@ -183,7 +184,7 @@ export function ChatList({ className }: { className?: string }) {
           <Input
             value={state.search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Look through the table"
+            placeholder={t("lookThroughTable")}
             className="h-9 border-0 bg-transparent px-0 text-sm shadow-none placeholder:text-[#6e6458] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
@@ -198,9 +199,9 @@ export function ChatList({ className }: { className?: string }) {
           className="px-5 pb-2"
         >
           <TabsList className="h-9 w-full bg-[#e7dccb]">
-            <TabsTrigger value="all">Open</TabsTrigger>
-            <TabsTrigger value="unread">Waiting</TabsTrigger>
-            <TabsTrigger value="groups">Hall</TabsTrigger>
+            <TabsTrigger value="all">{t("filterOpen")}</TabsTrigger>
+            <TabsTrigger value="unread">{t("filterWaiting")}</TabsTrigger>
+            <TabsTrigger value="groups">{t("filterHall")}</TabsTrigger>
           </TabsList>
         </Tabs>
       ) : null}
@@ -212,7 +213,7 @@ export function ChatList({ className }: { className?: string }) {
           className="mx-5 mb-2 flex items-center gap-2 rounded-2xl border border-dashed border-[#e0d6c8] px-3 py-2 text-left text-sm text-[#6e6458] hover:bg-[#f6f1e8]"
         >
           <Archive className="size-4" />
-          Filed away
+          {t("filedAway")}
           <span className="ml-auto font-heading text-[#1c1814]">{archivedCount}</span>
         </button>
       ) : null}
@@ -222,7 +223,7 @@ export function ChatList({ className }: { className?: string }) {
           <Hall />
         ) : visibleChats.length === 0 ? (
           <div className="px-8 py-16 text-center">
-            <p className="font-heading text-xl">Quiet for now.</p>
+            <p className="font-heading text-xl">{t("quietForNow")}</p>
             <p className="mt-2 text-sm text-[#6e6458]">{emptyCopy}</p>
           </div>
         ) : (

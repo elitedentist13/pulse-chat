@@ -11,6 +11,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { formatLastSeen } from "@/lib/format"
+import { topicKeys } from "@/lib/i18n"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { topicMeta } from "@/lib/topics"
 import { BellOff, Pin, Trash2 } from "lucide-react"
@@ -26,6 +28,7 @@ export function ContactInfo({
 }) {
   const { state, contactById, you, toggleMute, togglePin, deleteChat } =
     useMessenger()
+  const { t, locale } = useLocale()
   const chat = state.chats.find((item) => item.id === chatId)
   if (!chat) return null
 
@@ -49,17 +52,22 @@ export function ContactInfo({
             <SheetDescription>
               {direct
                 ? direct.phone
-                : `${room?.label ?? "Room"} · ${chat.participantIds.length} people`}
+                : t("peopleCount", {
+                    label: room
+                      ? t(topicKeys(chat.topic ?? "craft").label)
+                      : t("room"),
+                    count: chat.participantIds.length,
+                  })}
             </SheetDescription>
           </SheetHeader>
         </div>
         <div className="space-y-1 px-5 py-4">
           <p className="text-sm text-[#6e6458]">
             {direct
-              ? formatLastSeen(direct)
+              ? formatLastSeen(direct, undefined, locale)
               : room
-                ? room.line
-                : "A standing room."}
+                ? t(topicKeys(chat.topic ?? "craft").line)
+                : t("aStandingRoom")}
           </p>
           <p className="text-[15px] leading-6">
             {direct?.about ?? chat.blurb ?? "A standing Saturday."}
@@ -69,7 +77,7 @@ export function ContactInfo({
         {chat.kind === "group" ? (
           <div className="px-5 py-4">
             <p className="mb-3 text-xs tracking-[0.18em] text-[#b4452a] uppercase">
-              {members.length} in the room
+              {t("roomCount", { count: members.length })}
             </p>
             <ul className="space-y-3">
               {members.map((member) =>
@@ -78,7 +86,7 @@ export function ContactInfo({
                     <UserAvatar contact={member} size="sm" />
                     <div className="min-w-0">
                       <p className="truncate font-heading">
-                        {member.id === you.id ? "You" : member.name}
+                        {member.id === you.id ? t("you") : member.name}
                       </p>
                       <p className="truncate text-xs text-[#6e6458]">
                         {member.about}
@@ -97,7 +105,7 @@ export function ContactInfo({
             onClick={() => togglePin(chat.id)}
           >
             <Pin className="size-4" />
-            {chat.pinned ? "Leave the table" : "Keep on the table"}
+            {chat.pinned ? t("leaveTable") : t("keepOnTable")}
           </Button>
           <Button
             variant="ghost"
@@ -105,7 +113,7 @@ export function ContactInfo({
             onClick={() => toggleMute(chat.id)}
           >
             <BellOff className="size-4" />
-            {chat.muted ? "Let it speak" : "Keep it quiet"}
+            {chat.muted ? t("letItSpeak") : t("keepQuiet")}
           </Button>
           <Button
             variant="ghost"
@@ -116,7 +124,7 @@ export function ContactInfo({
             }}
           >
             <Trash2 className="size-4" />
-            Tear up
+            {t("tearUp")}
           </Button>
         </div>
       </SheetContent>

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDiaryDate } from "@/lib/dates"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
 import { Shuffle } from "lucide-react"
@@ -28,6 +29,7 @@ export function Porch({ className }: { className?: string }) {
     setSurface,
     state,
   } = useMessenger()
+  const { t, tag } = useLocale()
 
   return (
     <section
@@ -38,17 +40,14 @@ export function Porch({ className }: { className?: string }) {
         <div className="mx-auto flex max-w-2xl items-end justify-between gap-3">
           <div>
             <p className="text-xs tracking-[0.22em] text-[#b4452a] uppercase">
-              Community
+              {t("community")}
             </p>
-            <h1 className="font-heading text-3xl">The porch</h1>
-            <p className="mt-1 max-w-md text-sm text-[#6e6458]">
-              Public pages, in no particular order. Private days stay in the
-              drawer. Write to someone, or carry a page into notes.
-            </p>
+            <h1 className="font-heading text-3xl">{t("thePorch")}</h1>
+            <p className="mt-1 max-w-md text-sm text-[#6e6458]">{t("porchBlurb")}</p>
           </div>
           <Button variant="outline" onClick={reshufflePorch} data-reshuffle>
             <Shuffle className="size-4" />
-            Shuffle
+            {t("shuffle")}
           </Button>
         </div>
         <div className="mx-auto mt-4 max-w-2xl">
@@ -59,7 +58,7 @@ export function Porch({ className }: { className?: string }) {
         <ul className="mx-auto flex max-w-2xl flex-col gap-4">
           {porchEntries.length === 0 ? (
             <li className="rounded-[1.4rem] border border-dashed border-[#e0d6c8] px-5 py-10 text-center text-sm text-[#6e6458]">
-              Nobody has put a page on the porch yet.
+              {t("porchEmpty")}
             </li>
           ) : (
             porchEntries.map((entry) => {
@@ -78,8 +77,8 @@ export function Porch({ className }: { className?: string }) {
                       <div className="min-w-0">
                         <p className="font-heading text-lg">{pet.name}</p>
                         <p className="text-xs text-[#6e6458]">
-                          {owner.id === you.id ? "Your page" : owner.name} ·{" "}
-                          {formatDiaryDate(entry.date)}
+                          {owner.id === you.id ? t("yourPage") : owner.name} ·{" "}
+                          {formatDiaryDate(entry.date, tag)}
                         </p>
                       </div>
                     </div>
@@ -103,14 +102,14 @@ export function Porch({ className }: { className?: string }) {
                             setSurface("daybook")
                           }}
                         >
-                          Open in the daybook
+                          {t("openInDaybook")}
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           onClick={() => writeFromPorch(entry.id)}
                         >
-                          Write to {owner.name.split(" ")[0]}
+                          {t("writeToName", { name: owner.name.split(" ")[0] })}
                         </Button>
                       )}
                       <DropdownMenu>
@@ -118,7 +117,7 @@ export function Porch({ className }: { className?: string }) {
                           nativeButton={false}
                           render={
                             <Button variant="outline" size="sm">
-                              Share into notes
+                              {t("shareIntoNotes")}
                             </Button>
                           }
                         />

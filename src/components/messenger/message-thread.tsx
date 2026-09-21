@@ -3,6 +3,8 @@
 import { ReceiptMark } from "@/components/messenger/message-ticks"
 import { UserAvatar } from "@/components/messenger/user-avatar"
 import { formatClock, formatDateSeparator, sameDay } from "@/lib/format"
+import { topicKeys } from "@/lib/i18n"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { topicMeta } from "@/lib/topics"
 import type { Chat, Contact } from "@/lib/types"
@@ -11,6 +13,7 @@ import { useEffect, useRef } from "react"
 
 export function MessageThread({ chatId }: { chatId: string }) {
   const { messagesFor, contactById, you, state, reactToMessage } = useMessenger()
+  const { t, locale } = useLocale()
   const messages = messagesFor(chatId)
   const bottomRef = useRef<HTMLDivElement>(null)
   const chat = state.chats.find((item) => item.id === chatId)
@@ -36,9 +39,9 @@ export function MessageThread({ chatId }: { chatId: string }) {
             <RoomIntro chat={chat} members={members} youId={you.id} />
           </div>
         ) : null}
-        <p className="font-heading text-2xl">The table is empty.</p>
+        <p className="font-heading text-2xl">{t("tableEmpty")}</p>
         <p className="mt-2 max-w-sm text-sm text-[#6e6458]">
-          Write the first line. They’ll answer from the other chair.
+          {t("writeFirstLine")}
         </p>
       </div>
     )
@@ -65,7 +68,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
             <div key={message.id} className="w-full">
               {showDate ? (
                 <p className="my-6 text-center font-heading text-xs tracking-[0.2em] text-[#6e6458] uppercase">
-                  {formatDateSeparator(message.sentAt)}
+                  {formatDateSeparator(message.sentAt, undefined, locale)}
                 </p>
               ) : null}
               <article
@@ -77,10 +80,10 @@ export function MessageThread({ chatId }: { chatId: string }) {
                 {showSender ? (
                   <div className="mb-1.5 flex items-baseline justify-between gap-3 px-1">
                     <p className="font-heading text-sm text-[#1c1814]">
-                      {fromMe ? "You" : sender?.name}
+                      {fromMe ? t("you") : sender?.name}
                     </p>
                     <p className="text-[11px] text-[#6e6458]">
-                      {formatClock(message.sentAt)}
+                      {formatClock(message.sentAt, locale)}
                     </p>
                   </div>
                 ) : null}
@@ -117,7 +120,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
           <div className="mb-6 flex items-center gap-3 text-sm text-[#6e6458]">
             <UserAvatar contact={typingContact} size="sm" />
             <span className="italic">
-              {typingContact.name.split(" ")[0]} is still writing
+              {t("stillWritingPlain", { name: typingContact.name.split(" ")[0] })}
               <span className="ml-1 inline-flex gap-0.5">
                 <span className="size-1 animate-bounce rounded-full bg-[#b4452a] [animation-delay:-0.2s]" />
                 <span className="size-1 animate-bounce rounded-full bg-[#b4452a] [animation-delay:-0.1s]" />
@@ -141,6 +144,7 @@ function RoomIntro({
   members: Contact[]
   youId: string
 }) {
+  const { t } = useLocale()
   const room = topicMeta(chat.topic)
   const others = members.filter((person) => person.id !== youId)
 
@@ -153,11 +157,11 @@ function RoomIntro({
         className="text-[10px] tracking-[0.2em] uppercase"
         style={{ color: room.ink }}
       >
-        {room.label}
+        {t(topicKeys(chat.topic ?? "craft").label)}
       </p>
       <p className="mt-1 font-heading text-xl leading-tight">{chat.title}</p>
       <p className="mt-2 text-[15px] leading-6 text-[#6e6458]">
-        {chat.blurb ?? room.line}
+        {chat.blurb ?? t(topicKeys(chat.topic ?? "craft").line)}
       </p>
       <div className="mt-3 flex items-center gap-2">
         <span className="flex -space-x-1.5">
@@ -172,7 +176,7 @@ function RoomIntro({
         </span>
         <p className="min-w-0 truncate text-xs text-[#6e6458]">
           {others.map((person) => person.name.split(" ")[0]).join(" · ")}
-          {others.length ? " · You" : "You"}
+          {others.length ? ` · ${t("youInRoom")}` : t("youInRoom")}
         </p>
       </div>
     </aside>

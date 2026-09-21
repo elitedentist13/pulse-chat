@@ -14,6 +14,7 @@ import { inDateRange, toDateKey } from "@/lib/dates"
 import { createSeedSnapshot } from "@/lib/seed"
 import type {
   AppSurface,
+  CareRecord,
   Chat,
   Contact,
   DiaryEntry,
@@ -21,11 +22,14 @@ import type {
   Message,
   MessengerSnapshot,
   Pet,
+  PetTab,
+  PreventativeReminder,
   StatusUpdate,
   Story,
+  Talent,
 } from "@/lib/types"
 
-const STORAGE_KEY = "kith-daybook-v1"
+const STORAGE_KEY = "kith-daybook-v3"
 
 type ChatFilter = "all" | "unread" | "groups"
 
@@ -41,6 +45,7 @@ type MessengerState = MessengerSnapshot & {
   year: number
   yardFocus: "index" | "page"
   porchSeed: number
+  petTab: PetTab
 }
 
 type Action =
@@ -73,6 +78,13 @@ type Action =
   | { type: "close-story"; storyId: string }
   | { type: "save-entry"; entry: DiaryEntry }
   | { type: "delete-entry"; entryId: string }
+  | { type: "set-pet-tab"; tab: PetTab }
+  | { type: "upsert-care"; record: CareRecord }
+  | { type: "delete-care"; recordId: string }
+  | { type: "upsert-reminder"; reminder: PreventativeReminder }
+  | { type: "delete-reminder"; reminderId: string }
+  | { type: "upsert-talent"; talent: Talent }
+  | { type: "delete-talent"; talentId: string }
 
 function hydrate(snapshot: MessengerSnapshot): MessengerSnapshot {
   const seed = createSeedSnapshot()
@@ -82,12 +94,34 @@ function hydrate(snapshot: MessengerSnapshot): MessengerSnapshot {
     chats: snapshot.chats.map((item) => ({ ...item, typingContactId: null })),
     messages: snapshot.messages.map((item) => ({ ...item })),
     statuses: snapshot.statuses.map((item) => ({ ...item })),
-    pets: (snapshot.pets ?? seed.pets).map((item) => ({ ...item })),
+    pets: (snapshot.pets ?? seed.pets).map((item) => ({
+      ...{
+        nickname: "",
+        origin: "",
+        traits: "",
+        features: "",
+        favoriteFood: "",
+        fears: "",
+        specialNotes: "",
+        remarks: "",
+        medicalRemarks: "",
+        favoriteSnacks: "",
+        cannedFood: "",
+        currentFood: "",
+      },
+      ...item,
+    })),
     entries: (snapshot.entries ?? seed.entries).map((item) => ({
       ...item,
       photos: item.photos.map((photo) => ({ ...photo })),
     })),
     stories: (snapshot.stories ?? seed.stories).map((item) => ({ ...item })),
+    careRecords: (snapshot.careRecords ?? seed.careRecords).map((item) => ({
+      ...item,
+      attachments: item.attachments.map((photo) => ({ ...photo })),
+    })),
+    reminders: (snapshot.reminders ?? seed.reminders).map((item) => ({ ...item })),
+    talents: (snapshot.talents ?? seed.talents).map((item) => ({ ...item })),
   }
 }
 
@@ -112,6 +146,7 @@ function emptyUi(snapshot: MessengerSnapshot, now = Date.now()): Omit<
     year: new Date(now).getFullYear(),
     yardFocus: "index",
     porchSeed: now,
+    petTab: "pages",
   }
 }
 
@@ -157,7 +192,12 @@ function reducer(state: MessengerState, action: Action): MessengerState {
     case "set-pet":
       return { ...state, activePetId: action.petId }
     case "set-story":
-      return { ...state, activeStoryId: action.storyId, yardFocus: "page" }
+      return {
+        ...state,
+        activeStoryId: action.storyId,
+        yardFocus: "page",
+        petTab: "pages",
+      }
     case "set-date":
       return {
         ...state,
@@ -165,6 +205,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
         year: Number(action.date.slice(0, 4)),
         yardFocus: "page",
         surface: "daybook",
+        petTab: "pages",
       }
     case "set-year":
       return { ...state, year: action.year }
@@ -224,6 +265,61 @@ function reducer(state: MessengerState, action: Action): MessengerState {
       return {
         ...state,
         entries: state.entries.filter((entry) => entry.id !== action.entryId),
+      }
+    case "set-pet-tab":
+      return {
+        ...state,
+        petTab: action.tab,
+        surface: "daybook",
+        yardFocus: action.tab === "pages" ? state.yardFocus : "page",
+      }
+    case "upsert-care": {
+      const exists = state.careRecords.some((item) => item.id === action.record.id)
+      return {
+        ...state,
+        careRecords: exists
+          ? state.careRecords.map((item) =>
+              item.id === action.record.id ? action.record : item
+            )
+          : [action.record, ...state.careRecords],
+      }
+    }
+    case "delete-care":
+      return {
+        ...state,
+        careRecords: state.careRecords.filter((item) => item.id !== action.recordId),
+      }
+    case "upsert-reminder": {
+      const exists = state.reminders.some((item) => item.id === action.reminder.id)
+      return {
+        ...state,
+        reminders: exists
+          ? state.reminders.map((item) =>
+              item.id === action.reminder.id ? action.reminder : item
+            )
+          : [...state.reminders, action.reminder],
+      }
+    }
+    case "delete-reminder":
+      return {
+        ...state,
+        reminders: state.reminders.filter((item) => item.id !== action.reminderId),
+      }
+    case "upsert-talent": {
+      const exists = state.talents.some((item) => item.id === action.talent.id)
+      return {
+        ...state,
+        talents: exists
+          ? state.talents.map((item) =>
+              item.id === action.talent.id ? action.talent : item
+            )
+          : [...state.talents, action.talent],
+      }
+    }
+    case "delete-talent":
+      return {
+        ...state,
+        talents: state.talents.filter((item) => item.id !== action.talentId),
       }
     case "upsert-message": {
       const existing = state.messages.some((item) => item.id === action.message.id)
@@ -449,6 +545,9 @@ function persistable(state: MessengerState): MessengerSnapshot {
     pets: state.pets,
     entries: state.entries,
     stories: state.stories,
+    careRecords: state.careRecords,
+    reminders: state.reminders,
+    talents: state.talents,
   }
 }
 
@@ -495,8 +594,21 @@ type MessengerContextValue = {
   setDate: (date: string) => void
   setYear: (year: number) => void
   setYardFocus: (focus: "index" | "page") => void
+  setPetTab: (tab: PetTab) => void
   reshufflePorch: () => void
   savePet: (pet: Pet) => void
+  changePortrait: (file: File) => Promise<void>
+  careFor: (petId: string) => CareRecord[]
+  remindersFor: (petId: string) => PreventativeReminder[]
+  talentsFor: (petId: string) => Talent[]
+  saveCare: (record: Omit<CareRecord, "id"> & { id?: string }) => void
+  deleteCare: (recordId: string) => void
+  saveReminder: (
+    reminder: Omit<PreventativeReminder, "id"> & { id?: string }
+  ) => void
+  deleteReminder: (reminderId: string) => void
+  saveTalent: (talent: Omit<Talent, "id"> & { id?: string }) => void
+  deleteTalent: (talentId: string) => void
   saveStory: (story: Omit<Story, "id" | "createdAt"> & { id?: string }) => void
   closeStory: (storyId: string) => void
   saveEntry: (patch: Partial<DiaryEntry> & { date: string; petId: string }) => void
@@ -887,6 +999,65 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     [later, sendMessage]
   )
 
+  const careFor = useCallback(
+    (petId: string) =>
+      state.careRecords
+        .filter((item) => item.petId === petId)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [state.careRecords]
+  )
+
+  const remindersFor = useCallback(
+    (petId: string) => state.reminders.filter((item) => item.petId === petId),
+    [state.reminders]
+  )
+
+  const talentsFor = useCallback(
+    (petId: string) => state.talents.filter((item) => item.petId === petId),
+    [state.talents]
+  )
+
+  const changePortrait = useCallback(async (file: File) => {
+    const current = stateRef.current
+    const pet = current.pets.find((item) => item.id === current.activePetId)
+    if (!pet) return
+    const { compressPhoto } = await import("@/lib/photos")
+    dispatch({
+      type: "upsert-pet",
+      pet: { ...pet, portrait: await compressPhoto(file, 640) },
+    })
+  }, [])
+
+  const saveCare = useCallback(
+    (draft: Omit<CareRecord, "id"> & { id?: string }) => {
+      dispatch({
+        type: "upsert-care",
+        record: { ...draft, id: draft.id ?? nid("care") },
+      })
+    },
+    []
+  )
+
+  const saveReminder = useCallback(
+    (draft: Omit<PreventativeReminder, "id"> & { id?: string }) => {
+      dispatch({
+        type: "upsert-reminder",
+        reminder: { ...draft, id: draft.id ?? nid("remind") },
+      })
+    },
+    []
+  )
+
+  const saveTalent = useCallback(
+    (draft: Omit<Talent, "id"> & { id?: string }) => {
+      dispatch({
+        type: "upsert-talent",
+        talent: { ...draft, id: draft.id ?? nid("talent") },
+      })
+    },
+    []
+  )
+
   const resetDemo = useCallback(() => {
     clearTimers()
     window.localStorage.removeItem(STORAGE_KEY)
@@ -897,6 +1068,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "set-search", search: "" })
     dispatch({ type: "set-filter", filter: "all" })
     dispatch({ type: "set-surface", surface: "daybook" })
+    dispatch({ type: "set-pet-tab", tab: "pages" })
   }, [clearTimers])
 
   const value: MessengerContextValue = {
@@ -929,8 +1101,20 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     setDate: (date) => dispatch({ type: "set-date", date }),
     setYear: (year) => dispatch({ type: "set-year", year }),
     setYardFocus: (focus) => dispatch({ type: "set-yard-focus", focus }),
+    setPetTab: (tab) => dispatch({ type: "set-pet-tab", tab }),
     reshufflePorch: () => dispatch({ type: "reshuffle-porch" }),
     savePet: (pet) => dispatch({ type: "upsert-pet", pet }),
+    changePortrait,
+    careFor,
+    remindersFor,
+    talentsFor,
+    saveCare,
+    deleteCare: (recordId) => dispatch({ type: "delete-care", recordId }),
+    saveReminder,
+    deleteReminder: (reminderId) =>
+      dispatch({ type: "delete-reminder", reminderId }),
+    saveTalent,
+    deleteTalent: (talentId) => dispatch({ type: "delete-talent", talentId }),
     saveStory,
     closeStory: (storyId) => dispatch({ type: "close-story", storyId }),
     saveEntry,

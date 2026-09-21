@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toDateKey } from "@/lib/dates"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import type { EntryVisibility, Story } from "@/lib/types"
 import { useState } from "react"
@@ -49,7 +50,10 @@ function StoryForm({
   onDone: () => void
 }) {
   const { activePet, saveStory } = useMessenger()
-  const [title, setTitle] = useState(story?.title ?? `${activePet?.name ?? "Companion"}’s story`)
+  const { t } = useLocale()
+  const [title, setTitle] = useState(
+    story?.title ?? t("defaultStoryTitle", { name: activePet?.name ?? t("companion") })
+  )
   const [dedication, setDedication] = useState(story?.dedication ?? "")
   const [startDate, setStartDate] = useState(story?.startDate ?? activePet?.birthday ?? "")
   const [endDate, setEndDate] = useState(story?.endDate ?? toDateKey(new Date()))
@@ -74,64 +78,61 @@ function StoryForm({
 
   return (
     <>
-        <DialogHeader>
-          <DialogTitle className="font-heading text-xl">
-            {story ? "Edit this story" : "Open a new story"}
-          </DialogTitle>
-          <DialogDescription>
-            A story has a first day and an end date. Write pages until that last
-            day, then save the booklet.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogHeader>
+        <DialogTitle className="font-heading text-xl">
+          {story ? t("editStory") : t("openNewStory")}
+        </DialogTitle>
+        <DialogDescription>{t("storyHelp")}</DialogDescription>
+      </DialogHeader>
+      <label className="grid gap-1 text-sm">
+        {t("title")}
+        <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+      </label>
+      <label className="grid gap-1 text-sm">
+        {t("dedication")}
+        <Textarea
+          value={dedication}
+          onChange={(event) => setDedication(event.target.value)}
+          placeholder={t("dedicationPlaceholder")}
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1 text-sm">
-          Title
-          <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Dedication
-          <Textarea
-            value={dedication}
-            onChange={(event) => setDedication(event.target.value)}
-            placeholder="For the one who waited at the gate."
+          {t("firstDay")}
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
           />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1 text-sm">
-            First day
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
-            />
-          </label>
-          <label className="grid gap-1 text-sm">
-            End date
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
-            />
-          </label>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={visibility === "private" ? "default" : "outline"}
-            onClick={() => setVisibility("private")}
-          >
-            Keep in the drawer
-          </Button>
-          <Button
-            type="button"
-            variant={visibility === "public" ? "default" : "outline"}
-            onClick={() => setVisibility("public")}
-          >
-            Share on the porch
-          </Button>
-        </div>
-        <Button type="button" onClick={submit}>
-          {story ? "Save story" : "Open story"}
+        <label className="grid gap-1 text-sm">
+          {t("endDate")}
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+          />
+        </label>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant={visibility === "private" ? "default" : "outline"}
+          onClick={() => setVisibility("private")}
+        >
+          {t("keepInDrawer")}
         </Button>
+        <Button
+          type="button"
+          variant={visibility === "public" ? "default" : "outline"}
+          onClick={() => setVisibility("public")}
+        >
+          {t("shareOnPorch")}
+        </Button>
+      </div>
+      <Button type="button" onClick={submit}>
+        {story ? t("saveStory") : t("openStory")}
+      </Button>
     </>
   )
 }

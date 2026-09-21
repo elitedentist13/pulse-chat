@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatChatTime } from "@/lib/format"
+import { topicKeys } from "@/lib/i18n"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { topicMeta } from "@/lib/topics"
 import { cn } from "@/lib/utils"
@@ -30,6 +32,7 @@ export function ChatRow({ chat }: { chat: Chat }) {
     deleteChat,
     markUnread,
   } = useMessenger()
+  const { t, locale } = useLocale()
   const message = lastMessage(chat.id)
   const direct = chat.contactId ? contactById(chat.contactId) : undefined
   const typing = chat.typingContactId
@@ -74,7 +77,7 @@ export function ChatRow({ chat }: { chat: Chat }) {
                 className="shrink-0 text-[10px] tracking-[0.16em] uppercase"
                 style={{ color: room.ink }}
               >
-                {room.label}
+                {t(topicKeys(chat.topic ?? "craft").label)}
               </span>
             ) : null}
             {chat.pinned ? (
@@ -84,15 +87,15 @@ export function ChatRow({ chat }: { chat: Chat }) {
               <BellOff className="size-3 shrink-0 text-[#6e6458]" />
             ) : null}
             <span className="ml-auto shrink-0 text-[11px] text-[#6e6458]">
-              {message ? formatChatTime(message.sentAt) : ""}
+              {message ? formatChatTime(message.sentAt, undefined, locale) : ""}
             </span>
           </span>
           <span className="mt-1 flex items-start gap-2 text-[13px] leading-5">
             {typing ? (
               <span className="truncate italic text-[#b4452a]">
                 {chat.kind === "group"
-                  ? `${typing.name.split(" ")[0]} is still writing…`
-                  : "still writing…"}
+                  ? t("stillWritingNamed", { name: typing.name.split(" ")[0] })
+                  : t("stillWriting")}
               </span>
             ) : (
               <span
@@ -101,8 +104,12 @@ export function ChatRow({ chat }: { chat: Chat }) {
                   chat.unread > 0 ? "text-[#1c1814]" : "text-[#6e6458]"
                 )}
               >
-                {fromMe ? "You · " : sender ? `${sender.name.split(" ")[0]} · ` : null}
-                {message?.text ?? "Nothing on the table yet."}
+                {fromMe
+                  ? t("youDot")
+                  : sender
+                    ? t("senderDot", { name: sender.name.split(" ")[0] })
+                    : null}
+                {message?.text ?? t("nothingOnTable")}
               </span>
             )}
             {fromMe && message && !typing ? (
@@ -122,7 +129,7 @@ export function ChatRow({ chat }: { chat: Chat }) {
               variant="ghost"
               size="icon-sm"
               className="absolute top-3 right-2 text-[#6e6458] opacity-0 hover:bg-[#e7dccb] hover:text-[#1c1814] group-hover:opacity-100 data-popup-open:opacity-100"
-              aria-label={`Options for ${chat.title}`}
+              aria-label={t("optionsFor", { name: chat.title })}
             />
           }
         >
@@ -130,23 +137,23 @@ export function ChatRow({ chat }: { chat: Chat }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => togglePin(chat.id)}>
-            {chat.pinned ? "Leave the table" : "Keep on the table"}
+            {chat.pinned ? t("leaveTable") : t("keepOnTable")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => toggleMute(chat.id)}>
-            {chat.muted ? "Let it speak" : "Keep it quiet"}
+            {chat.muted ? t("letItSpeak") : t("keepQuiet")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => markUnread(chat.id)}>
-            Mark as waiting
+            {t("markAsWaiting")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => toggleArchive(chat.id)}>
-            {chat.archived ? "Bring back" : "File away"}
+            {chat.archived ? t("bringBack") : t("fileAway")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
             onClick={() => deleteChat(chat.id)}
           >
-            Tear up
+            {t("tearUp")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

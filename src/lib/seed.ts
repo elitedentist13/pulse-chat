@@ -492,6 +492,9 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     pets: yard.pets,
     entries: yard.entries,
     stories: yard.stories,
+    careRecords: yard.careRecords,
+    reminders: yard.reminders,
+    talents: yard.talents,
   }
 }
 

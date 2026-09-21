@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { formatClock } from "@/lib/format"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { useEffect, useState } from "react"
 
@@ -41,6 +42,7 @@ function StatusPlayback({
   onClose: () => void
 }) {
   const { statuses, contactById, you } = useMessenger()
+  const { t, locale } = useLocale()
   const status = statuses.find((item) => item.id === statusId)
   const contact = status ? contactById(status.contactId) : undefined
   const [progress, setProgress] = useState(0)
@@ -74,9 +76,9 @@ function StatusPlayback({
           <UserAvatar contact={contact} size="sm" />
           <div className="text-left">
             <DialogTitle className="font-heading text-base">
-              {contact.id === you.id ? "Your mood" : contact.name}
+              {contact.id === you.id ? t("yourMood") : contact.name}
             </DialogTitle>
-            <DialogDescription>{formatClock(status.createdAt)}</DialogDescription>
+            <DialogDescription>{formatClock(status.createdAt, locale)}</DialogDescription>
           </div>
         </DialogHeader>
       </div>

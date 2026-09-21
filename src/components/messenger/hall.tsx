@@ -2,6 +2,8 @@
 
 import { GroupAvatar, UserAvatar } from "@/components/messenger/user-avatar"
 import { formatChatTime } from "@/lib/format"
+import { topicKeys } from "@/lib/i18n"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { ROOM_TOPICS, topicMeta } from "@/lib/topics"
 import type { Chat, Contact, Message } from "@/lib/types"
@@ -9,6 +11,7 @@ import { cn } from "@/lib/utils"
 
 export function Hall({ className }: { className?: string }) {
   const { state, contactById, lastMessage, selectChat, you } = useMessenger()
+  const { t } = useLocale()
   const query = state.search.trim().toLowerCase()
 
   const rooms = state.chats.filter((chat) => {
@@ -26,12 +29,10 @@ export function Hall({ className }: { className?: string }) {
 
   return (
     <div className={cn("px-5 pb-6", className)} data-hall>
-      <p className="pt-1 text-sm leading-6 text-[#6e6458]">
-        Standing rooms, not a feed. Craft, body, kin, and work keep their own
-        shelves.
-      </p>
+      <p className="pt-1 text-sm leading-6 text-[#6e6458]">{t("hallIntro")}</p>
       {ROOM_TOPICS.map((shelf) => {
         const shelfRooms = rooms.filter((room) => room.topic === shelf.id)
+        const keys = topicKeys(shelf.id)
         return (
           <section key={shelf.id} className="mt-5" data-shelf={shelf.id}>
             <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -39,13 +40,13 @@ export function Hall({ className }: { className?: string }) {
                 className="font-heading text-lg"
                 style={{ color: shelf.ink }}
               >
-                {shelf.label}
+                {t(keys.label)}
               </h2>
-              <p className="truncate text-xs text-[#6e6458]">{shelf.line}</p>
+              <p className="truncate text-xs text-[#6e6458]">{t(keys.line)}</p>
             </div>
             {shelfRooms.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-[#e0d6c8] px-4 py-3 text-sm text-[#6e6458]">
-                No {shelf.label.toLowerCase()} rooms on this table.
+                {t("noRoomsOnShelf", { shelf: t(keys.label) })}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -87,6 +88,7 @@ function RoomCard({
   names: Contact[]
   onOpen: () => void
 }) {
+  const { t, locale } = useLocale()
   const meta = topicMeta(room.topic)
   const others = names.filter((person) => person.id !== youId)
 
@@ -113,11 +115,11 @@ function RoomCard({
               className="shrink-0 text-[10px] tracking-[0.16em] uppercase"
               style={{ color: meta.ink }}
             >
-              {meta.label}
+              {t(topicKeys(room.topic ?? "craft").label)}
             </span>
             {preview ? (
               <span className="ml-auto shrink-0 text-[11px] text-[#6e6458]">
-                {formatChatTime(preview.sentAt)}
+                {formatChatTime(preview.sentAt, undefined, locale)}
               </span>
             ) : null}
           </span>
@@ -138,7 +140,7 @@ function RoomCard({
             <span className="min-w-0 truncate text-[11px] text-[#6e6458]">
               {preview
                 ? preview.text
-                : `${room.participantIds.length} in the chairs`}
+                : t("inTheChairs", { count: room.participantIds.length })}
             </span>
             {room.unread > 0 ? (
               <span className="ml-auto size-2 shrink-0 rounded-full bg-[#b4452a]" />

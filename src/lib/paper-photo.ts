@@ -29,6 +29,27 @@ export function paperPhoto({
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
+export function paperSlip({
+  title,
+  ink = "#6e6458",
+}: {
+  title: string
+  ink?: string
+}) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="400" viewBox="0 0 320 400">
+    <rect width="320" height="400" fill="#f4efe4"/>
+    <rect x="18" y="18" width="284" height="364" fill="none" stroke="${ink}" stroke-width="2"/>
+    <text x="160" y="48" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="${ink}">${escapeXml(title)}</text>
+    <line x1="40" y1="70" x2="280" y2="70" stroke="${ink}" stroke-opacity="0.35"/>
+    <line x1="40" y1="100" x2="280" y2="100" stroke="${ink}" stroke-opacity="0.25"/>
+    <line x1="40" y1="130" x2="240" y2="130" stroke="${ink}" stroke-opacity="0.25"/>
+    <line x1="40" y1="160" x2="260" y2="160" stroke="${ink}" stroke-opacity="0.2"/>
+    <rect x="40" y="200" width="240" height="140" fill="${ink}" opacity="0.08"/>
+    <text x="160" y="276" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="${ink}">photo kept</text>
+  </svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
 function escapeXml(value: string) {
   return value
     .replaceAll("&", "&amp;")

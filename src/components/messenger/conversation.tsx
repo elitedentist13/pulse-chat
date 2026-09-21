@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatLastSeen } from "@/lib/format"
+import { topicKeys } from "@/lib/i18n"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { topicMeta } from "@/lib/topics"
 import { cn } from "@/lib/utils"
@@ -31,6 +33,7 @@ export function Conversation({ className }: { className?: string }) {
     toggleArchive,
     deleteChat,
   } = useMessenger()
+  const { t, locale } = useLocale()
   const [infoOpen, setInfoOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
@@ -55,16 +58,16 @@ export function Conversation({ className }: { className?: string }) {
     if (!activeChat) return ""
     if (typing) {
       return activeChat.kind === "group"
-        ? `${typing.name.split(" ")[0]} is still writing…`
-        : "still writing…"
+        ? t("stillWritingNamed", { name: typing.name.split(" ")[0] })
+        : t("stillWriting")
     }
-    if (direct) return formatLastSeen(direct)
+    if (direct) return formatLastSeen(direct, undefined, locale)
     if (activeChat.blurb) return activeChat.blurb
     const names = activeChat.participantIds
-      .map((id) => (id === you.id ? "You" : contactById(id)?.name.split(" ")[0]))
+      .map((id) => (id === you.id ? t("you") : contactById(id)?.name.split(" ")[0]))
       .filter(Boolean)
-    return `${names.length} in the room · ${names.join(", ")}`
-  }, [activeChat, contactById, direct, typing, you.id])
+    return t("inTheRoom", { count: names.length, names: names.join(", ") })
+  }, [activeChat, contactById, direct, locale, t, typing, you.id])
 
   if (!activeChat) {
     return (
@@ -76,17 +79,16 @@ export function Conversation({ className }: { className?: string }) {
       >
         <div className="max-w-md px-8 text-center">
           <p className="text-xs tracking-[0.28em] text-[#b4452a] uppercase">
-            A table, not a feed
+            {t("tableNotFeed")}
           </p>
           <h1 className="mt-3 font-heading text-5xl leading-none text-[#1c1814]">
-            Sit down.
+            {t("sitDown")}
           </h1>
           <p className="mt-4 text-[16px] leading-7 text-[#6e6458]">
-            Notes are the side table. The daybook is the house. Pick a person
-            or a hall room when a porch page needs a reply.
+            {t("notesAreSideTable")}
           </p>
           <p className="mt-8 text-xs text-[#6e6458]">
-            Double-click a note to leave a heart. Nothing leaves this browser.
+            {t("doubleClickHeart")}
           </p>
         </div>
       </section>
@@ -106,7 +108,7 @@ export function Conversation({ className }: { className?: string }) {
           size="icon"
           className="text-[#1c1814] hover:bg-[#efe8dc] md:hidden"
           onClick={() => selectChat(null)}
-          aria-label="Back to chats"
+          aria-label={t("backToChats")}
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -136,7 +138,7 @@ export function Conversation({ className }: { className?: string }) {
                   style={{ color: room.ink }}
                   data-room-topic={activeChat.topic}
                 >
-                  {room.label}
+                  {t(topicKeys(activeChat.topic ?? "craft").label)}
                 </span>
               ) : null}
             </span>
@@ -171,7 +173,7 @@ export function Conversation({ className }: { className?: string }) {
           variant="ghost"
           size="icon"
           className="text-[#6e6458] hover:bg-[#efe8dc]"
-          aria-label="Search in conversation"
+          aria-label={t("searchInConversation")}
           onClick={() => setSearchOpen((open) => !open)}
         >
           <Search className="size-5" />
@@ -184,7 +186,7 @@ export function Conversation({ className }: { className?: string }) {
                 variant="ghost"
                 size="icon"
                 className="text-[#6e6458] hover:bg-[#efe8dc]"
-                aria-label="Conversation menu"
+                aria-label={t("conversationMenu")}
               />
             }
           >
@@ -192,23 +194,23 @@ export function Conversation({ className }: { className?: string }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setInfoOpen(true)}>
-              Who’s here
+              {t("whoIsHere")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => togglePin(activeChat.id)}>
-              {activeChat.pinned ? "Leave the table" : "Keep on the table"}
+              {activeChat.pinned ? t("leaveTable") : t("keepOnTable")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => toggleMute(activeChat.id)}>
-              {activeChat.muted ? "Let it speak" : "Keep it quiet"}
+              {activeChat.muted ? t("letItSpeak") : t("keepQuiet")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => toggleArchive(activeChat.id)}>
-              {activeChat.archived ? "Bring back" : "File away"}
+              {activeChat.archived ? t("bringBack") : t("fileAway")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onClick={() => deleteChat(activeChat.id)}
             >
-              Tear up
+              {t("tearUp")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -218,7 +220,7 @@ export function Conversation({ className }: { className?: string }) {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search this conversation"
+            placeholder={t("searchConversation")}
             className="h-9 w-full rounded-full border border-[#e0d6c8] bg-white px-4 text-sm outline-none placeholder:text-[#6e6458]"
           />
         </div>
@@ -249,6 +251,7 @@ function SearchableThread({ chatId, query }: { chatId: string; query: string }) 
 
 function FilteredThread({ chatId, query }: { chatId: string; query: string }) {
   const { messagesFor, contactById } = useMessenger()
+  const { t } = useLocale()
   const needle = query.trim().toLowerCase()
   const hits = messagesFor(chatId).filter((message) =>
     message.text.toLowerCase().includes(needle)
@@ -257,7 +260,7 @@ function FilteredThread({ chatId, query }: { chatId: string; query: string }) {
   if (hits.length === 0) {
     return (
       <div className="flex h-full items-center justify-center px-8 text-center text-sm text-[#6e6458]">
-        No notes in this conversation match “{query.trim()}”.
+        {t("noNotesMatch", { query: query.trim() })}
       </div>
     )
   }

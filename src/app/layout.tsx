@@ -28,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${display.variable} ${sans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full overflow-hidden bg-[#f6f1e8] text-[#1c1814]">

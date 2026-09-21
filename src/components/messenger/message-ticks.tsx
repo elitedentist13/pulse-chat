@@ -1,3 +1,4 @@
+import { useLocale } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 import type { MessageStatus } from "@/lib/types"
 
@@ -8,14 +9,15 @@ export function ReceiptMark({
   status: MessageStatus
   className?: string
 }) {
+  const { t } = useLocale()
   const label =
     status === "sending"
-      ? "Writing"
+      ? t("writing")
       : status === "sent"
-        ? "Sent"
+        ? t("sent")
         : status === "delivered"
-          ? "Arrived"
-          : "Seen"
+          ? t("arrived")
+          : t("seen")
 
   return (
     <span

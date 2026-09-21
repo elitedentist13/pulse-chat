@@ -3,10 +3,13 @@
 import { AppNav } from "@/components/yard/app-nav"
 import { PetAvatar } from "@/components/yard/pet-avatar"
 import { PetEditor } from "@/components/yard/pet-editor"
+import { PetTabs } from "@/components/yard/pet-tabs"
+import { PortraitButton } from "@/components/yard/portrait-button"
 import { StoryDialog } from "@/components/yard/story-dialog"
 import { YearCalendar } from "@/components/yard/year-calendar"
 import { Button } from "@/components/ui/button"
 import { formatRange, toDateKey } from "@/lib/dates"
+import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -22,9 +25,11 @@ export function YardSpine({ className }: { className?: string }) {
     setPet,
     setStory,
     setDate,
+    setPetTab,
+    changePortrait,
     resetDemo,
   } = useMessenger()
-  const [editPet, setEditPet] = useState(false)
+  const { t, tag } = useLocale()
   const [newPet, setNewPet] = useState(false)
   const [storyOpen, setStoryOpen] = useState(false)
   const stories = activePet ? storiesFor(activePet.id) : []
@@ -42,11 +47,13 @@ export function YardSpine({ className }: { className?: string }) {
           <div>
             <p className="font-heading text-3xl leading-none tracking-tight">Kith</p>
             <p className="mt-1 text-sm text-[#6e6458]">
-              {activePet ? `${activePet.name}’s daybook` : `${you.name}’s yard`}
+              {activePet
+                ? t("daybookOf", { name: activePet.name })
+                : t("yardOf", { name: you.name })}
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={resetDemo}>
-            Reset
+            {t("reset")}
           </Button>
         </div>
         <AppNav className="mt-4" />
@@ -72,40 +79,54 @@ export function YardSpine({ className }: { className?: string }) {
             </button>
           ))}
           <Button variant="outline" size="sm" onClick={() => setNewPet(true)}>
-            Add
+            {t("add")}
           </Button>
         </div>
 
         {activePet ? (
-          <button
-            type="button"
-            onClick={() => setEditPet(true)}
-            className="mb-4 w-full rounded-[1.4rem] border border-[#e0d6c8] bg-[#fbf7f0] p-4 text-left"
+          <div
+            className="mb-3 rounded-[1.4rem] border border-[#e0d6c8] bg-[#fbf7f0] p-4"
             data-pet-profile
           >
             <div className="flex items-center gap-3">
-              <PetAvatar pet={activePet} size="lg" />
-              <div className="min-w-0">
+              <PortraitButton
+                pet={activePet}
+                size="lg"
+                onPick={(file) => void changePortrait(file)}
+              />
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left"
+                onClick={() => setPetTab("profile")}
+              >
                 <p className="font-heading text-xl">{activePet.name}</p>
                 <p className="text-xs text-[#6e6458]">
-                  {activePet.breed} · born {activePet.birthday}
+                  {activePet.nickname
+                    ? t("nicknameDot", { name: activePet.nickname })
+                    : null}
+                  {activePet.breed} · {t("born", { date: activePet.birthday })}
                 </p>
-              </div>
+              </button>
             </div>
             <p className="mt-3 text-sm leading-6 text-[#6e6458]">{activePet.about}</p>
-          </button>
+            <p className="mt-2 text-[11px] text-[#6e6458]">{t("clickPhoto")}</p>
+          </div>
         ) : null}
 
+        <PetTabs className="mb-4" />
+
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs tracking-[0.18em] text-[#b4452a] uppercase">Stories</p>
+          <p className="text-xs tracking-[0.18em] text-[#b4452a] uppercase">
+            {t("stories")}
+          </p>
           <Button size="sm" onClick={() => setStoryOpen(true)} data-new-story>
-            New story
+            {t("newStory")}
           </Button>
         </div>
         <ul className="mb-6 space-y-2">
           {stories.length === 0 ? (
             <li className="rounded-2xl border border-dashed border-[#e0d6c8] px-3 py-3 text-sm text-[#6e6458]">
-              Open a story. Give it an end date. Write until then, then export the booklet.
+              {t("storyEmpty")}
             </li>
           ) : (
             stories.map((story) => {
@@ -137,12 +158,14 @@ export function YardSpine({ className }: { className?: string }) {
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="font-heading">{story.title}</span>
                       <span className="text-[10px] tracking-[0.14em] uppercase text-[#6e6458]">
-                        {story.closed ? "Closed" : "Open"}
+                        {story.closed ? t("closed") : t("open")}
                       </span>
                     </span>
                     <span className="mt-1 block text-xs text-[#6e6458]">
-                      {formatRange(story.startDate, story.endDate)} · {pages} page
-                      {pages === 1 ? "" : "s"}
+                      {formatRange(story.startDate, story.endDate, tag)} ·{" "}
+                      {t(pages === 1 ? "pageCount" : "pageCountPlural", {
+                        count: pages,
+                      })}
                     </span>
                   </button>
                 </li>
@@ -154,7 +177,6 @@ export function YardSpine({ className }: { className?: string }) {
         <YearCalendar />
       </div>
 
-      <PetEditor open={editPet} onOpenChange={setEditPet} pet={activePet} />
       <PetEditor open={newPet} onOpenChange={setNewPet} />
       <StoryDialog open={storyOpen} onOpenChange={setStoryOpen} />
     </aside>
