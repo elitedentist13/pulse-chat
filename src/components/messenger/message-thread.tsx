@@ -31,7 +31,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-3 py-3 md:px-8">
+    <div className="min-h-0 w-full flex-1 overflow-y-auto px-3 py-3 md:px-8">
       {messages.map((message, index) => {
         const previous = messages[index - 1]
         const showDate =
@@ -46,7 +46,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
         const isGroup = chat?.kind === "group"
 
         return (
-          <div key={message.id}>
+          <div key={message.id} className="w-full">
             {showDate ? (
               <div className="my-3 flex justify-center">
                 <span className="rounded-md bg-[#182229] px-3 py-1 text-xs font-medium text-[#8696a0] shadow-sm">
@@ -56,7 +56,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
             ) : null}
             <div
               className={cn(
-                "mb-0.5 flex",
+                "mb-0.5 flex w-full",
                 fromMe ? "justify-end" : "justify-start"
               )}
             >
