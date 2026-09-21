@@ -51,7 +51,7 @@ export function Porch({ className }: { className?: string }) {
             Shuffle
           </Button>
         </div>
-        <div className="mx-auto mt-4 max-w-2xl md:hidden">
+        <div className="mx-auto mt-4 max-w-2xl">
           <AppNav />
         </div>
       </header>
