@@ -1,6 +1,7 @@
 "use client"
 
 import { AppNav } from "@/components/yard/app-nav"
+import { MediaTile } from "@/components/yard/media-tile"
 import { PetAvatar } from "@/components/yard/pet-avatar"
 import { PetTabs } from "@/components/yard/pet-tabs"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { exportStoryBooklet } from "@/lib/booklet"
 import { addDays, formatDiaryDate, inDateRange } from "@/lib/dates"
+import { MediaLimitError, PAGE_MEDIA_LIMIT, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS } from "@/lib/media"
 import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
@@ -29,7 +31,7 @@ export function DayPage({ className }: { className?: string }) {
     setDate,
     setYardFocus,
     saveEntry,
-    addPhotos,
+    addMedia,
     removePhoto,
     shareEntryToChat,
     closeStory,
@@ -38,6 +40,8 @@ export function DayPage({ className }: { className?: string }) {
   const { t, tag } = useLocale()
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState("")
+  const [mediaError, setMediaError] = useState("")
+  const [adding, setAdding] = useState(false)
 
   if (!activePet) {
     return (
@@ -213,12 +217,11 @@ export function DayPage({ className }: { className?: string }) {
                 key={photo.id}
                 className="relative overflow-hidden rounded-[1.2rem] bg-[#efe8dc] ring-1 ring-[#e0d6c8]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.src} alt={photo.alt} className="aspect-square w-full object-cover" />
+                <MediaTile item={photo} />
                 {canWrite ? (
                   <button
                     type="button"
-                    className="absolute top-2 right-2 rounded-full bg-[#fbf7f0]/90 p-1"
+                    className="absolute top-2 right-2 z-10 rounded-full bg-[#fbf7f0]/90 p-1"
                     onClick={() => removePhoto(photo.id)}
                     aria-label={t("removePhoto")}
                   >
@@ -227,26 +230,57 @@ export function DayPage({ className }: { className?: string }) {
                 ) : null}
               </figure>
             ))}
-            {canWrite && (selectedEntry?.photos.length ?? 0) < 3 ? (
-              <label className="grid aspect-square cursor-pointer place-items-center rounded-[1.2rem] border border-dashed border-[#e0d6c8] text-[#6e6458] hover:bg-[#fbf7f0]">
-                <span className="grid place-items-center gap-1 text-xs">
+            {canWrite && (selectedEntry?.photos.length ?? 0) < PAGE_MEDIA_LIMIT ? (
+              <label
+                data-add-media
+                className="grid aspect-square cursor-pointer place-items-center rounded-[1.2rem] border border-dashed border-[#e0d6c8] text-[#6e6458] hover:bg-[#fbf7f0]"
+              >
+                <span className="grid place-items-center gap-1 px-2 text-center text-xs">
                   <ImagePlus className="size-5" />
-                  {t("addPhoto")}
+                  {adding ? t("addingMedia") : t("addPhoto")}
                 </span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
                   multiple
                   className="sr-only"
                   onChange={(event) => {
                     const files = [...(event.target.files ?? [])]
-                    if (files.length) void addPhotos(files)
                     event.target.value = ""
+                    if (!files.length) return
+                    setAdding(true)
+                    setMediaError("")
+                    void addMedia(files)
+                      .catch((error) => {
+                        if (error instanceof MediaLimitError) {
+                          const key =
+                            error.code === "too-long"
+                              ? "videoTooLong"
+                              : error.code === "too-heavy"
+                                ? "videoTooHeavy"
+                                : "videoUnreadable"
+                          setMediaError(t(key, { seconds: error.seconds, mb: error.mb }))
+                          return
+                        }
+                        setMediaError(t("videoUnreadable"))
+                      })
+                      .finally(() => setAdding(false))
                   }}
                 />
               </label>
             ) : null}
           </div>
+          <p className="text-xs text-[#6e6458]">
+            {t("videoHint", {
+              seconds: VIDEO_MAX_SECONDS,
+              mb: VIDEO_MAX_BYTES / (1024 * 1024),
+            })}
+          </p>
+          {mediaError ? (
+            <p data-media-error className="text-sm text-[#9f2d2d]">
+              {mediaError}
+            </p>
+          ) : null}
 
           {activeStory ? (
             <div className="rounded-[1.4rem] border border-[#e0d6c8] bg-[#fbf7f0] px-4 py-3">

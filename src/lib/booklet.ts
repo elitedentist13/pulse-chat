@@ -96,9 +96,10 @@ export async function exportStoryBooklet({
     doc.setFontSize(12)
     let top = 28
     const photo = entry.photos[0]
-    if (photo) {
+    const still = photo?.poster || photo?.src
+    if (photo && still) {
       try {
-        const image = await rasterize(photo.src)
+        const image = await rasterize(still)
         const maxW = width - 36
         const maxH = 78
         const scale = Math.min(maxW / 80, maxH / ((80 * image.h) / image.w))

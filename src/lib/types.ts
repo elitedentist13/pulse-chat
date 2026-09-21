@@ -118,10 +118,15 @@ export type Talent = {
 
 export type EntryVisibility = "private" | "public"
 
+export type MediaKind = "photo" | "video"
+
 export type DiaryPhoto = {
   id: string
   src: string
   alt: string
+  kind?: MediaKind
+  duration?: number
+  poster?: string
 }
 
 export type DiaryEntry = {

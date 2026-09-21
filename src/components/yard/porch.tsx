@@ -1,6 +1,7 @@
 "use client"
 
 import { AppNav } from "@/components/yard/app-nav"
+import { MediaTile } from "@/components/yard/media-tile"
 import { PetAvatar } from "@/components/yard/pet-avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -83,12 +84,9 @@ export function Porch({ className }: { className?: string }) {
                       </div>
                     </div>
                     {entry.photos[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={entry.photos[0].src}
-                        alt={entry.photos[0].alt}
-                        className="mt-3 aspect-[4/3] w-full rounded-[1.2rem] object-cover"
-                      />
+                      <div className="mt-3 overflow-hidden rounded-[1.2rem]">
+                        <MediaTile item={entry.photos[0]} fit="wide" />
+                      </div>
                     ) : null}
                     <p className="mt-3 text-[15px] leading-7">{entry.text}</p>
                     <div className="mt-3 flex flex-wrap gap-2">

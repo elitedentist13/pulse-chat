@@ -1,6 +1,7 @@
 "use client"
 
 import { AppNav } from "@/components/yard/app-nav"
+import { MediaTile } from "@/components/yard/media-tile"
 import { PetTabs } from "@/components/yard/pet-tabs"
 import { PortraitButton } from "@/components/yard/portrait-button"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { reminderDue, toDateKey } from "@/lib/dates"
 import type { MessageKey } from "@/lib/i18n"
 import { useLocale } from "@/lib/locale"
-import { compressPhoto } from "@/lib/photos"
+import {
+  ingestMedia,
+  MediaLimitError,
+  PAGE_MEDIA_LIMIT,
+  VIDEO_MAX_BYTES,
+  VIDEO_MAX_SECONDS,
+} from "@/lib/media"
 import { useMessenger } from "@/lib/messenger-store"
 import type { CareKind, CareRecord } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -279,13 +286,12 @@ function CareCard({
       {record.attachments.length > 0 ? (
         <div className="mt-2 flex gap-2 overflow-x-auto">
           {record.attachments.map((photo) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <div
               key={photo.id}
-              src={photo.src}
-              alt={photo.alt}
-              className="h-20 w-16 rounded-lg object-cover ring-1 ring-[#e0d6c8]"
-            />
+              className="h-20 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-[#e0d6c8]"
+            >
+              <MediaTile item={photo} className="h-20 w-16" />
+            </div>
           ))}
         </div>
       ) : null}
@@ -317,30 +323,46 @@ function CareForm({
   const [detail, setDetail] = useState("")
   const [date, setDate] = useState(toDateKey(new Date()))
   const [files, setFiles] = useState<File[]>([])
+  const [mediaError, setMediaError] = useState("")
+  const [adding, setAdding] = useState(false)
 
   async function submit() {
     if (!title.trim()) return
-    const attachments = []
-    for (const file of files.slice(0, 3)) {
-      attachments.push({
-        id: `att-${file.name}-${file.size}`,
-        src: await compressPhoto(file),
-        alt: file.name,
+    setAdding(true)
+    setMediaError("")
+    try {
+      const attachments = []
+      for (const file of files.slice(0, PAGE_MEDIA_LIMIT)) {
+        attachments.push(await ingestMedia(file))
+      }
+      onSave({
+        petId,
+        kind,
+        date,
+        title: title.trim(),
+        meta: meta.trim(),
+        detail: detail.trim(),
+        attachments,
       })
+      setTitle("")
+      setMeta("")
+      setDetail("")
+      setFiles([])
+    } catch (error) {
+      if (error instanceof MediaLimitError) {
+        const key =
+          error.code === "too-long"
+            ? "videoTooLong"
+            : error.code === "too-heavy"
+              ? "videoTooHeavy"
+              : "videoUnreadable"
+        setMediaError(t(key, { seconds: error.seconds, mb: error.mb }))
+      } else {
+        setMediaError(t("videoUnreadable"))
+      }
+    } finally {
+      setAdding(false)
     }
-    onSave({
-      petId,
-      kind,
-      date,
-      title: title.trim(),
-      meta: meta.trim(),
-      detail: detail.trim(),
-      attachments,
-    })
-    setTitle("")
-    setMeta("")
-    setDetail("")
-    setFiles([])
   }
 
   return (
@@ -361,14 +383,23 @@ function CareForm({
           value={meta}
           onChange={(event) => setMeta(event.target.value)}
         />
-        <label className="flex items-center gap-2 text-xs text-[#6e6458]">
+        <label className="flex flex-col gap-1 text-xs text-[#6e6458]">
           {t("photoOfSlip")}
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
             multiple
-            onChange={(event) => setFiles([...(event.target.files ?? [])])}
+            onChange={(event) => {
+              setFiles([...(event.target.files ?? [])])
+              setMediaError("")
+            }}
           />
+          <span>
+            {t("videoHint", {
+              seconds: VIDEO_MAX_SECONDS,
+              mb: VIDEO_MAX_BYTES / (1024 * 1024),
+            })}
+          </span>
         </label>
       </div>
       <Textarea
@@ -377,8 +408,17 @@ function CareForm({
         value={detail}
         onChange={(event) => setDetail(event.target.value)}
       />
-      <Button size="sm" className="mt-2" type="button" onClick={() => void submit()}>
-        {t("keepRecord")}
+      {mediaError ? (
+        <p className="mt-2 text-sm text-[#9f2d2d]">{mediaError}</p>
+      ) : null}
+      <Button
+        size="sm"
+        className="mt-2"
+        type="button"
+        disabled={adding}
+        onClick={() => void submit()}
+      >
+        {adding ? t("addingMedia") : t("keepRecord")}
       </Button>
     </div>
   )

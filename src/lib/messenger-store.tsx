@@ -113,12 +113,18 @@ function hydrate(snapshot: MessengerSnapshot): MessengerSnapshot {
     })),
     entries: (snapshot.entries ?? seed.entries).map((item) => ({
       ...item,
-      photos: item.photos.map((photo) => ({ ...photo })),
+      photos: item.photos.map((photo) => ({
+        kind: "photo" as const,
+        ...photo,
+      })),
     })),
     stories: (snapshot.stories ?? seed.stories).map((item) => ({ ...item })),
     careRecords: (snapshot.careRecords ?? seed.careRecords).map((item) => ({
       ...item,
-      attachments: item.attachments.map((photo) => ({ ...photo })),
+      attachments: item.attachments.map((photo) => ({
+        kind: "photo" as const,
+        ...photo,
+      })),
     })),
     reminders: (snapshot.reminders ?? seed.reminders).map((item) => ({ ...item })),
     talents: (snapshot.talents ?? seed.talents).map((item) => ({ ...item })),
@@ -612,7 +618,7 @@ type MessengerContextValue = {
   saveStory: (story: Omit<Story, "id" | "createdAt"> & { id?: string }) => void
   closeStory: (storyId: string) => void
   saveEntry: (patch: Partial<DiaryEntry> & { date: string; petId: string }) => void
-  addPhotos: (files: File[]) => Promise<void>
+  addMedia: (files: File[]) => Promise<void>
   removePhoto: (photoId: string) => void
   deleteEntry: (entryId: string) => void
   writeFromPorch: (entryId: string) => void
@@ -910,22 +916,18 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const addPhotos = useCallback(async (files: File[]) => {
-    const { compressPhoto } = await import("@/lib/photos")
+  const addMedia = useCallback(async (files: File[]) => {
+    const { ingestMedia, PAGE_MEDIA_LIMIT } = await import("@/lib/media")
     const current = stateRef.current
     const existing = current.entries.find(
       (entry) =>
         entry.petId === current.activePetId && entry.date === current.selectedDate
     )
     if (!current.activePetId) return
-    const room = 3 - (existing?.photos.length ?? 0)
+    const room = PAGE_MEDIA_LIMIT - (existing?.photos.length ?? 0)
     const photos: DiaryPhoto[] = []
     for (const file of files.slice(0, Math.max(0, room))) {
-      photos.push({
-        id: nid("photo"),
-        src: await compressPhoto(file),
-        alt: file.name.replace(/\.[^.]+$/, ""),
-      })
+      photos.push(await ingestMedia(file))
     }
     if (photos.length === 0) return
     saveEntry({
@@ -943,10 +945,17 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
           entry.petId === current.activePetId && entry.date === current.selectedDate
       )
       if (!existing || !current.activePetId) return
+      const next = existing.photos.filter((photo) => photo.id !== photoId)
+      const dropped = existing.photos.find((photo) => photo.id === photoId)
+      if (dropped) {
+        void import("@/lib/media-db").then(({ purgeMediaBlobs }) =>
+          purgeMediaBlobs([dropped])
+        )
+      }
       saveEntry({
         petId: current.activePetId,
         date: current.selectedDate,
-        photos: existing.photos.filter((photo) => photo.id !== photoId),
+        photos: next,
       })
     },
     [saveEntry]
@@ -992,7 +1001,13 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       later(() => {
         sendMessage(
           chatId,
-          `${pet.name} · ${entry.date}${entry.photos.length ? " · with a photo" : ""}. ${entry.text.slice(0, 180)}`
+          `${pet.name} · ${entry.date}${
+            entry.photos.some((item) => item.kind === "video")
+              ? " · with a clip"
+              : entry.photos.length
+                ? " · with a photo"
+                : ""
+          }. ${entry.text.slice(0, 180)}`
         )
       }, 50)
     },
@@ -1061,6 +1076,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => {
     clearTimers()
     window.localStorage.removeItem(STORAGE_KEY)
+    void import("@/lib/media-db").then(({ clearMediaBlobs }) => clearMediaBlobs())
     const snapshot = createSeedSnapshot(Date.now())
     dispatch({ type: "replace", snapshot })
     dispatch({ type: "select-chat", chatId: null })
@@ -1109,7 +1125,15 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     remindersFor,
     talentsFor,
     saveCare,
-    deleteCare: (recordId) => dispatch({ type: "delete-care", recordId }),
+    deleteCare: (recordId) => {
+      const record = stateRef.current.careRecords.find((item) => item.id === recordId)
+      if (record) {
+        void import("@/lib/media-db").then(({ purgeMediaBlobs }) =>
+          purgeMediaBlobs(record.attachments)
+        )
+      }
+      dispatch({ type: "delete-care", recordId })
+    },
     saveReminder,
     deleteReminder: (reminderId) =>
       dispatch({ type: "delete-reminder", reminderId }),
@@ -1118,9 +1142,17 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     saveStory,
     closeStory: (storyId) => dispatch({ type: "close-story", storyId }),
     saveEntry,
-    addPhotos,
+    addMedia,
     removePhoto,
-    deleteEntry: (entryId) => dispatch({ type: "delete-entry", entryId }),
+    deleteEntry: (entryId) => {
+      const entry = stateRef.current.entries.find((item) => item.id === entryId)
+      if (entry) {
+        void import("@/lib/media-db").then(({ purgeMediaBlobs }) =>
+          purgeMediaBlobs(entry.photos)
+        )
+      }
+      dispatch({ type: "delete-entry", entryId })
+    },
     writeFromPorch,
     shareEntryToChat,
     togglePin: (chatId) => dispatch({ type: "toggle-pin", chatId }),
