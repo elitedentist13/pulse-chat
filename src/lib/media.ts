@@ -47,7 +47,7 @@ export async function ingestMedia(file: File): Promise<DiaryPhoto> {
       throw new MediaLimitError("unreadable")
     }
     if (duration > VIDEO_MAX_SECONDS + 0.25) {
-      throw new MediaLimitError("too-long", { seconds: Math.round(duration) })
+      throw new MediaLimitError("too-long")
     }
     const id = nid("clip")
     await putMediaBlob(id, file)
