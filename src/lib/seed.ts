@@ -1,3 +1,4 @@
+import { createYardSeed } from "@/lib/seed-yard"
 import type { Chat, Contact, Message, MessengerSnapshot, StatusUpdate } from "@/lib/types"
 
 const YOU_ID = "you"
@@ -45,7 +46,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     lastSeen: now,
     replyBank: [],
     initials: "MN",
-    interests: ["craft", "work"],
+    interests: ["craft", "work", "porch", "juniper", "walk"],
   })
 
   const maya = contact({
@@ -60,9 +61,10 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "On it — I’ll drop a tighter mock after lunch.",
       "Love that. Let’s ship the quieter version.",
       "Can you glance at the spacing on the composer?",
+      "Ink would sit on that page and approve it.",
       "Yes. I’ll ping you when the palette is locked.",
     ],
-    interests: ["craft", "design", "palette", "mock", "composer"],
+    interests: ["craft", "design", "palette", "mock", "composer", "ink", "porch"],
   })
 
   const jordan = contact({
@@ -77,9 +79,10 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Bet. I’ll grab snacks on the way.",
       "Sunrise start still good?",
       "Leave the extra layer in the car just in case.",
-      "Haha ok ok I’ll actually set an alarm.",
+      "Pike would love that walk.",
+      "Send the wet-sock photo to the porch.",
     ],
-    interests: ["body", "trail", "wind", "stove", "alarm"],
+    interests: ["body", "trail", "wind", "stove", "alarm", "pike", "porch", "walk"],
   })
 
   const priya = contact({
@@ -93,10 +96,10 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     replyBank: [
       "Auntie already asked if you’re bringing that salad.",
       "Come whenever — door’s open.",
-      "I’ll save you a plate if traffic is awful.",
+      "Mango already voted for citrus.",
       "Yes, dad is grilling. Don’t skip this one.",
     ],
-    interests: ["kin", "lunch", "salad", "limes", "family"],
+    interests: ["kin", "lunch", "salad", "limes", "family", "mango", "porch"],
   })
 
   const luca = contact({
@@ -110,10 +113,10 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     replyBank: [
       "Invoice is ready whenever you are.",
       "Perfect. I’ll send the revised cut tonight.",
-      "Can we keep the brand mark a little quieter?",
+      "Nero sat on the title card. We kept the frames.",
       "Noted — I’ll adjust the timeline.",
     ],
-    interests: ["work", "craft", "cut", "invoice", "title"],
+    interests: ["work", "craft", "cut", "invoice", "title", "nero", "porch"],
   })
 
   const aisha = contact({
@@ -126,11 +129,11 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     lastSeen: now,
     replyBank: [
       "PR looks clean. I’ll merge after tests.",
-      "Want me to pair on the unread badge?",
+      "Byte already shipped the morning walk.",
       "That edge case is real — I’ll add a fixture.",
       "Done. Check the latest commit.",
     ],
-    interests: ["craft", "code", "tests", "badge", "fixture"],
+    interests: ["craft", "code", "tests", "badge", "fixture", "byte", "walk", "porch"],
   })
 
   const noah = contact({
@@ -143,11 +146,11 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     lastSeen: minutes(12),
     replyBank: [
       "I’ll grab limes too.",
-      "We’re out of dish tabs, fyi.",
+      "Oat finished the carton. Not theatrical.",
       "Leaving the spare key under the plant.",
       "Movie night still on if you’re home by 8.",
     ],
-    interests: ["kin", "body", "court", "pump", "water"],
+    interests: ["kin", "body", "court", "pump", "water", "oat", "porch"],
   })
 
   const elena = contact({
@@ -305,6 +308,19 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       blurb: "Title cards, invoices, and the briefing that keeps moving.",
     },
     {
+      id: "chat-porch",
+      kind: "group",
+      title: "Porch watch",
+      participantIds: [YOU_ID, jordan.id, maya.id, priya.id, noah.id, aisha.id],
+      pinned: false,
+      muted: false,
+      archived: false,
+      unread: 1,
+      typingContactId: null,
+      topic: "kin",
+      blurb: "Someone always left the gate. Pets, walks, and the wet-sock notes.",
+    },
+    {
       id: "chat-priya",
       kind: "direct",
       title: priya.name,
@@ -399,6 +415,10 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     m("m43", "chat-sunday", YOU_ID, "Citrus salad and limes.", hours(22), "read"),
     m("m44", "chat-sunday", noah.id, "I’ll bring sparkling water. Priya already claimed me.", hours(16), "read"),
 
+    m("m48", "chat-porch", jordan.id, "Pike carried the extra layer like a flag. Porch has the photo.", hours(9), "delivered"),
+    m("m49", "chat-porch", YOU_ID, "Juniper left mud on the stairs. I put yesterday on the porch.", hours(8), "read"),
+    m("m50", "chat-porch", maya.id, "Ink vetoed my loud green and then sat on the page.", minutes(80), "delivered"),
+
     m("m45", "chat-studio", luca.id, "Title card still eight frames short.", hours(12), "delivered"),
     m("m46", "chat-studio", YOU_ID, "I’ll put the export in this room this afternoon.", hours(11.4), "read"),
     m("m47", "chat-studio", elena.id, "Board overran. Can the briefing live here instead of a separate thread?", minutes(70), "delivered"),
@@ -431,7 +451,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     {
       id: "st-you",
       contactId: YOU_ID,
-      text: "Keeping one conversation in the room at a time.",
+      text: "Juniper waited at the orchard tree. The page is still open.",
       createdAt: hours(5),
       viewed: true,
       accent: colors.teal,
@@ -462,7 +482,17 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     },
   ]
 
-  return { youId: YOU_ID, contacts, chats, messages, statuses }
+  const yard = createYardSeed(now)
+  return {
+    youId: YOU_ID,
+    contacts,
+    chats,
+    messages,
+    statuses,
+    pets: yard.pets,
+    entries: yard.entries,
+    stories: yard.stories,
+  }
 }
 
 function m(

@@ -51,10 +51,61 @@ export type StatusUpdate = {
   accent: string
 }
 
+export type PetKind = "dog" | "cat" | "other"
+
+export type Pet = {
+  id: string
+  ownerId: string
+  name: string
+  kind: PetKind
+  breed: string
+  birthday: string
+  about: string
+  color: string
+  initials: string
+  portrait?: string
+}
+
+export type EntryVisibility = "private" | "public"
+
+export type DiaryPhoto = {
+  id: string
+  src: string
+  alt: string
+}
+
+export type DiaryEntry = {
+  id: string
+  petId: string
+  date: string
+  text: string
+  photos: DiaryPhoto[]
+  visibility: EntryVisibility
+  storyId?: string
+  updatedAt: number
+}
+
+export type Story = {
+  id: string
+  petId: string
+  title: string
+  dedication: string
+  startDate: string
+  endDate: string
+  visibility: EntryVisibility
+  closed: boolean
+  createdAt: number
+}
+
+export type AppSurface = "daybook" | "porch" | "notes"
+
 export type MessengerSnapshot = {
   youId: string
   contacts: Contact[]
   chats: Chat[]
   messages: Message[]
   statuses: StatusUpdate[]
+  pets: Pet[]
+  entries: DiaryEntry[]
+  stories: Story[]
 }

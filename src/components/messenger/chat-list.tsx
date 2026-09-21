@@ -4,6 +4,7 @@ import { ChatRow } from "@/components/messenger/chat-row"
 import { Hall } from "@/components/messenger/hall"
 import { NewChatDialog } from "@/components/messenger/new-chat-dialog"
 import { StatusViewer } from "@/components/messenger/status-viewer"
+import { AppNav } from "@/components/yard/app-nav"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -87,10 +88,12 @@ export function ChatList({ className }: { className?: string }) {
         ) : (
           <div>
             <p className="font-heading text-3xl leading-none tracking-tight">
-              Kith
+              Notes
             </p>
             <p className="mt-1 text-sm text-[#6e6458]">
-              {state.chatFilter === "groups" ? "The hall" : `${you.name}’s table`}
+              {state.chatFilter === "groups"
+                ? "The hall — adjunct rooms"
+                : "Sit down when a porch page needs a reply"}
             </p>
           </div>
         )}
@@ -134,6 +137,11 @@ export function ChatList({ className }: { className?: string }) {
           </DropdownMenu>
         </div>
       </header>
+      {state.listMode === "chats" ? (
+        <div className="px-5 pb-3">
+          <AppNav />
+        </div>
+      ) : null}
 
       {state.listMode === "chats" ? (
         <div className="flex gap-2 overflow-x-auto px-5 pb-3">

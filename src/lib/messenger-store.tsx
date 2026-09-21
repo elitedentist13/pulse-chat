@@ -10,10 +10,22 @@ import {
   useRef,
   type ReactNode,
 } from "react"
+import { inDateRange, toDateKey } from "@/lib/dates"
 import { createSeedSnapshot } from "@/lib/seed"
-import type { Chat, Contact, Message, MessengerSnapshot, StatusUpdate } from "@/lib/types"
+import type {
+  AppSurface,
+  Chat,
+  Contact,
+  DiaryEntry,
+  DiaryPhoto,
+  Message,
+  MessengerSnapshot,
+  Pet,
+  StatusUpdate,
+  Story,
+} from "@/lib/types"
 
-const STORAGE_KEY = "kith-messenger-v3"
+const STORAGE_KEY = "kith-daybook-v1"
 
 type ChatFilter = "all" | "unread" | "groups"
 
@@ -22,6 +34,13 @@ type MessengerState = MessengerSnapshot & {
   listMode: "chats" | "archived"
   chatFilter: ChatFilter
   search: string
+  surface: AppSurface
+  activePetId: string | null
+  activeStoryId: string | null
+  selectedDate: string
+  year: number
+  yardFocus: "index" | "page"
+  porchSeed: number
 }
 
 type Action =
@@ -42,31 +61,63 @@ type Action =
   | { type: "react"; messageId: string; reaction?: string }
   | { type: "view-status"; statusId: string }
   | { type: "ensure-chat"; contactId: string; chatId: string }
+  | { type: "set-surface"; surface: AppSurface }
+  | { type: "set-pet"; petId: string | null }
+  | { type: "set-story"; storyId: string | null }
+  | { type: "set-date"; date: string }
+  | { type: "set-year"; year: number }
+  | { type: "set-yard-focus"; focus: "index" | "page" }
+  | { type: "reshuffle-porch" }
+  | { type: "upsert-pet"; pet: Pet }
+  | { type: "upsert-story"; story: Story }
+  | { type: "close-story"; storyId: string }
+  | { type: "save-entry"; entry: DiaryEntry }
+  | { type: "delete-entry"; entryId: string }
 
-function cloneSnapshot(snapshot: MessengerSnapshot): MessengerSnapshot {
+function hydrate(snapshot: MessengerSnapshot): MessengerSnapshot {
+  const seed = createSeedSnapshot()
   return {
     youId: snapshot.youId,
     contacts: snapshot.contacts.map((item) => ({ ...item })),
     chats: snapshot.chats.map((item) => ({ ...item, typingContactId: null })),
     messages: snapshot.messages.map((item) => ({ ...item })),
     statuses: snapshot.statuses.map((item) => ({ ...item })),
+    pets: (snapshot.pets ?? seed.pets).map((item) => ({ ...item })),
+    entries: (snapshot.entries ?? seed.entries).map((item) => ({
+      ...item,
+      photos: item.photos.map((photo) => ({ ...photo })),
+    })),
+    stories: (snapshot.stories ?? seed.stories).map((item) => ({ ...item })),
   }
 }
 
-function emptyUi(): Pick<
+function emptyUi(snapshot: MessengerSnapshot, now = Date.now()): Omit<
   MessengerState,
-  "activeChatId" | "listMode" | "chatFilter" | "search"
+  keyof MessengerSnapshot
 > {
+  const today = toDateKey(new Date(now))
+  const yours = snapshot.pets.find((pet) => pet.ownerId === snapshot.youId)
+  const openStory = snapshot.stories.find(
+    (story) => story.petId === yours?.id && !story.closed
+  )
   return {
     activeChatId: null,
     listMode: "chats",
     chatFilter: "all",
     search: "",
+    surface: "daybook",
+    activePetId: yours?.id ?? snapshot.pets[0]?.id ?? null,
+    activeStoryId: openStory?.id ?? null,
+    selectedDate: today,
+    year: new Date(now).getFullYear(),
+    yardFocus: "index",
+    porchSeed: now,
   }
 }
 
 function createInitialState(): MessengerState {
-  return { ...cloneSnapshot(createSeedSnapshot()), ...emptyUi() }
+  const snapshot = hydrate(createSeedSnapshot())
+  return { ...snapshot, ...emptyUi(snapshot) }
 }
 
 function lastMessageTime(state: MessengerState, chatId: string) {
@@ -79,10 +130,16 @@ function lastMessageTime(state: MessengerState, chatId: string) {
   return latest
 }
 
+function nid(prefix: string) {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${prefix}-${Date.now()}`
+}
+
 function reducer(state: MessengerState, action: Action): MessengerState {
   switch (action.type) {
     case "replace":
-      return { ...state, ...cloneSnapshot(action.snapshot) }
+      return { ...state, ...hydrate(action.snapshot) }
     case "select-chat":
       return { ...state, activeChatId: action.chatId }
     case "set-search":
@@ -90,10 +147,83 @@ function reducer(state: MessengerState, action: Action): MessengerState {
     case "set-filter":
       return { ...state, chatFilter: action.filter }
     case "set-list-mode":
+      return { ...state, listMode: action.mode, activeChatId: null }
+    case "set-surface":
       return {
         ...state,
-        listMode: action.mode,
-        activeChatId: null,
+        surface: action.surface,
+        yardFocus: action.surface === "daybook" ? state.yardFocus : "page",
+      }
+    case "set-pet":
+      return { ...state, activePetId: action.petId }
+    case "set-story":
+      return { ...state, activeStoryId: action.storyId, yardFocus: "page" }
+    case "set-date":
+      return {
+        ...state,
+        selectedDate: action.date,
+        year: Number(action.date.slice(0, 4)),
+        yardFocus: "page",
+        surface: "daybook",
+      }
+    case "set-year":
+      return { ...state, year: action.year }
+    case "set-yard-focus":
+      return { ...state, yardFocus: action.focus }
+    case "reshuffle-porch":
+      return { ...state, porchSeed: Date.now() }
+    case "upsert-pet": {
+      const exists = state.pets.some((pet) => pet.id === action.pet.id)
+      return {
+        ...state,
+        activePetId: action.pet.id,
+        pets: exists
+          ? state.pets.map((pet) => (pet.id === action.pet.id ? action.pet : pet))
+          : [...state.pets, action.pet],
+      }
+    }
+    case "upsert-story": {
+      const exists = state.stories.some((story) => story.id === action.story.id)
+      return {
+        ...state,
+        activeStoryId: action.story.id,
+        activePetId: action.story.petId,
+        surface: "daybook",
+        selectedDate:
+          action.story.startDate > state.selectedDate
+            ? action.story.startDate
+            : state.selectedDate > action.story.endDate
+              ? action.story.endDate
+              : state.selectedDate,
+        stories: exists
+          ? state.stories.map((story) =>
+              story.id === action.story.id ? action.story : story
+            )
+          : [...state.stories, action.story],
+      }
+    }
+    case "close-story":
+      return {
+        ...state,
+        stories: state.stories.map((story) =>
+          story.id === action.storyId ? { ...story, closed: true } : story
+        ),
+      }
+    case "save-entry": {
+      const exists = state.entries.some((entry) => entry.id === action.entry.id)
+      return {
+        ...state,
+        entries: exists
+          ? state.entries.map((entry) =>
+              entry.id === action.entry.id ? action.entry : entry
+            )
+          : [...state.entries, action.entry],
+      }
+    }
+    case "delete-entry":
+      return {
+        ...state,
+        entries: state.entries.filter((entry) => entry.id !== action.entryId),
       }
     case "upsert-message": {
       const existing = state.messages.some((item) => item.id === action.message.id)
@@ -110,11 +240,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
         messages,
         chats: state.chats.map((chat) =>
           chat.id === action.message.chatId
-            ? {
-                ...chat,
-                unread: incoming ? chat.unread + 1 : chat.unread,
-                archived: incoming ? chat.archived : chat.archived,
-              }
+            ? { ...chat, unread: incoming ? chat.unread + 1 : chat.unread }
             : chat
         ),
       }
@@ -163,8 +289,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
           chat.id === action.chatId ? { ...chat, muted: !chat.muted } : chat
         ),
       }
-    case "toggle-archive": {
-      const target = state.chats.find((chat) => chat.id === action.chatId)
+    case "toggle-archive":
       return {
         ...state,
         activeChatId:
@@ -174,10 +299,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
             ? { ...chat, archived: !chat.archived, pinned: false }
             : chat
         ),
-        listMode:
-          target && !target.archived ? state.listMode : state.listMode,
       }
-    }
     case "delete-chat":
       return {
         ...state,
@@ -226,6 +348,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
       if (state.chats.some((chat) => chat.id === action.chatId)) {
         return {
           ...state,
+          surface: "notes",
           activeChatId: action.chatId,
           listMode: "chats",
           chats: state.chats.map((chat) =>
@@ -249,6 +372,7 @@ function reducer(state: MessengerState, action: Action): MessengerState {
       }
       return {
         ...state,
+        surface: "notes",
         chats: [chat, ...state.chats],
         activeChatId: chat.id,
         listMode: "chats",
@@ -273,7 +397,6 @@ function pickResponder(
   if (chat.kind !== "group" || others.length === 1) {
     return others[Math.floor(Math.random() * others.length)]
   }
-
   const text = incoming.toLowerCase()
   const ranked = others
     .map((contact) => {
@@ -285,7 +408,6 @@ function pickResponder(
       return { contact, score }
     })
     .sort((a, b) => b.score - a.score)
-
   return ranked[0]?.contact ?? others[0]
 }
 
@@ -293,6 +415,19 @@ function pickReply(contact: Contact, incoming: string) {
   const text = incoming.toLowerCase()
   if (text.includes("thank")) return "Anytime."
   if (text.includes("sorry")) return "No stress — we’re good."
+  if (
+    /porch|juniper|pike|ink|mango|oat|nero|byte|walk|treat|booklet|story/.test(
+      text
+    )
+  ) {
+    return (
+      contact.replyBank.find((line) =>
+        /walk|treat|porch|pike|ink|mango|oat|nero|byte|dog|cat/.test(line)
+      ) ??
+      contact.replyBank[0] ??
+      "I saw that page."
+    )
+  }
   if (text.includes("?")) {
     return (
       contact.replyBank.find((line) => line.includes("?")) ??
@@ -311,7 +446,23 @@ function persistable(state: MessengerState): MessengerSnapshot {
     chats: state.chats.map((chat) => ({ ...chat, typingContactId: null })),
     messages: state.messages,
     statuses: state.statuses,
+    pets: state.pets,
+    entries: state.entries,
+    stories: state.stories,
   }
+}
+
+function shuffle<T>(items: T[], seed: number) {
+  const copy = [...items]
+  let value = seed || 1
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    value = (value * 16807) % 2147483647
+    const other = value % (index + 1)
+    const current = copy[index]!
+    copy[index] = copy[other]!
+    copy[other] = current
+  }
+  return copy
 }
 
 type MessengerContextValue = {
@@ -320,7 +471,17 @@ type MessengerContextValue = {
   activeChat: Chat | null
   visibleChats: Chat[]
   archivedCount: number
+  unreadNotes: number
   contactById: (id: string) => Contact | undefined
+  petById: (id: string) => Pet | undefined
+  activePet: Pet | null
+  activeStory: Story | null
+  yourPets: Pet[]
+  selectedEntry: DiaryEntry | undefined
+  porchEntries: DiaryEntry[]
+  storiesFor: (petId: string) => Story[]
+  entriesFor: (petId: string) => DiaryEntry[]
+  storyPages: (storyId: string) => DiaryEntry[]
   messagesFor: (chatId: string) => Message[]
   lastMessage: (chatId: string) => Message | undefined
   selectChat: (chatId: string | null) => void
@@ -328,6 +489,22 @@ type MessengerContextValue = {
   setSearch: (search: string) => void
   setFilter: (filter: ChatFilter) => void
   setListMode: (mode: "chats" | "archived") => void
+  setSurface: (surface: AppSurface) => void
+  setPet: (petId: string) => void
+  setStory: (storyId: string | null) => void
+  setDate: (date: string) => void
+  setYear: (year: number) => void
+  setYardFocus: (focus: "index" | "page") => void
+  reshufflePorch: () => void
+  savePet: (pet: Pet) => void
+  saveStory: (story: Omit<Story, "id" | "createdAt"> & { id?: string }) => void
+  closeStory: (storyId: string) => void
+  saveEntry: (patch: Partial<DiaryEntry> & { date: string; petId: string }) => void
+  addPhotos: (files: File[]) => Promise<void>
+  removePhoto: (photoId: string) => void
+  deleteEntry: (entryId: string) => void
+  writeFromPorch: (entryId: string) => void
+  shareEntryToChat: (entryId: string, chatId: string) => void
   togglePin: (chatId: string) => void
   toggleMute: (chatId: string) => void
   toggleArchive: (chatId: string) => void
@@ -335,7 +512,7 @@ type MessengerContextValue = {
   markUnread: (chatId: string) => void
   reactToMessage: (messageId: string, reaction?: string) => void
   viewStatus: (statusId: string) => void
-  startChatWith: (contactId: string) => void
+  startChatWith: (contactId: string) => string
   resetDemo: () => void
   statuses: StatusUpdate[]
 }
@@ -398,6 +575,11 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     [state.contacts]
   )
 
+  const petById = useCallback(
+    (id: string) => state.pets.find((pet) => pet.id === id),
+    [state.pets]
+  )
+
   const messagesFor = useCallback(
     (chatId: string) =>
       state.messages
@@ -416,6 +598,12 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
 
   const archivedCount = useMemo(
     () => state.chats.filter((chat) => chat.archived).length,
+    [state.chats]
+  )
+
+  const unreadNotes = useMemo(
+    () =>
+      state.chats.reduce((sum, chat) => sum + (chat.archived ? 0 : chat.unread), 0),
     [state.chats]
   )
 
@@ -449,6 +637,62 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
   const activeChat =
     state.chats.find((chat) => chat.id === state.activeChatId) ?? null
 
+  const activePet = state.activePetId ? petById(state.activePetId) ?? null : null
+  const activeStory = state.activeStoryId
+    ? state.stories.find((story) => story.id === state.activeStoryId) ?? null
+    : null
+
+  const yourPets = useMemo(
+    () => state.pets.filter((pet) => pet.ownerId === you.id),
+    [state.pets, you.id]
+  )
+
+  const selectedEntry = useMemo(
+    () =>
+      state.entries.find(
+        (entry) =>
+          entry.petId === state.activePetId && entry.date === state.selectedDate
+      ),
+    [state.activePetId, state.entries, state.selectedDate]
+  )
+
+  const storiesFor = useCallback(
+    (petId: string) =>
+      state.stories
+        .filter((story) => story.petId === petId)
+        .sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    [state.stories]
+  )
+
+  const entriesFor = useCallback(
+    (petId: string) =>
+      state.entries
+        .filter((entry) => entry.petId === petId)
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [state.entries]
+  )
+
+  const storyPages = useCallback(
+    (storyId: string) => {
+      const story = state.stories.find((item) => item.id === storyId)
+      if (!story) return []
+      return state.entries
+        .filter(
+          (entry) =>
+            entry.petId === story.petId &&
+            (entry.storyId === story.id ||
+              inDateRange(entry.date, story.startDate, story.endDate))
+        )
+        .sort((a, b) => a.date.localeCompare(b.date))
+    },
+    [state.entries, state.stories]
+  )
+
+  const porchEntries = useMemo(() => {
+    const publicPages = state.entries.filter((entry) => entry.visibility === "public")
+    return shuffle(publicPages, state.porchSeed)
+  }, [state.entries, state.porchSeed])
+
   const selectChat = useCallback((chatId: string | null) => {
     dispatch({ type: "select-chat", chatId })
     if (chatId) dispatch({ type: "mark-read", chatId })
@@ -459,10 +703,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       const trimmed = text.trim()
       if (!trimmed) return
       const current = stateRef.current
-      const id =
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `msg-${Date.now()}`
+      const id = nid("msg")
       const message: Message = {
         id,
         chatId,
@@ -474,14 +715,12 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "upsert-message", message })
       dispatch({ type: "select-chat", chatId })
       dispatch({ type: "mark-read", chatId })
-
       later(() => {
         dispatch({ type: "patch-message", id, patch: { status: "sent" } })
       }, 280)
       later(() => {
         dispatch({ type: "patch-message", id, patch: { status: "delivered" } })
       }, 720)
-
       const chat = current.chats.find((item) => item.id === chatId)
       if (!chat) return
       const responder = pickResponder(
@@ -491,7 +730,6 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
         current.youId
       )
       if (!responder) return
-
       const typingAt = 900 + Math.random() * 1100
       const replyAt = typingAt + 700 + Math.random() * 1600
       later(() => {
@@ -500,10 +738,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       later(() => {
         dispatch({ type: "set-typing", chatId, contactId: null })
         const reply: Message = {
-          id:
-            typeof crypto !== "undefined" && crypto.randomUUID
-              ? crypto.randomUUID()
-              : `msg-${Date.now()}-r`,
+          id: nid("msg"),
           chatId,
           senderId: responder.id,
           text: pickReply(responder, trimmed),
@@ -514,11 +749,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
         if (stateRef.current.activeChatId === chatId) {
           dispatch({ type: "mark-read", chatId })
         }
-        dispatch({
-          type: "patch-message",
-          id,
-          patch: { status: "read" },
-        })
+        dispatch({ type: "patch-message", id, patch: { status: "read" } })
       }, replyAt)
     },
     [later]
@@ -531,16 +762,141 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     const chatId = existing?.id ?? `chat-${contactId}`
     dispatch({ type: "ensure-chat", contactId, chatId })
     dispatch({ type: "mark-read", chatId })
+    return chatId
   }, [])
+
+  const saveEntry = useCallback(
+    (patch: Partial<DiaryEntry> & { date: string; petId: string }) => {
+      const current = stateRef.current
+      const existing = current.entries.find(
+        (entry) => entry.petId === patch.petId && entry.date === patch.date
+      )
+      const story =
+        current.stories.find((item) => item.id === current.activeStoryId) ??
+        current.stories.find(
+          (item) =>
+            item.petId === patch.petId &&
+            !item.closed &&
+            inDateRange(patch.date, item.startDate, item.endDate)
+        )
+      const inStory =
+        story && inDateRange(patch.date, story.startDate, story.endDate)
+          ? story.id
+          : existing?.storyId
+      const entry: DiaryEntry = {
+        id: existing?.id ?? nid("entry"),
+        petId: patch.petId,
+        date: patch.date,
+        text: patch.text ?? existing?.text ?? "",
+        photos: patch.photos ?? existing?.photos ?? [],
+        visibility: patch.visibility ?? existing?.visibility ?? "private",
+        storyId: patch.storyId ?? inStory,
+        updatedAt: Date.now(),
+      }
+      dispatch({ type: "save-entry", entry })
+    },
+    []
+  )
+
+  const addPhotos = useCallback(async (files: File[]) => {
+    const { compressPhoto } = await import("@/lib/photos")
+    const current = stateRef.current
+    const existing = current.entries.find(
+      (entry) =>
+        entry.petId === current.activePetId && entry.date === current.selectedDate
+    )
+    if (!current.activePetId) return
+    const room = 3 - (existing?.photos.length ?? 0)
+    const photos: DiaryPhoto[] = []
+    for (const file of files.slice(0, Math.max(0, room))) {
+      photos.push({
+        id: nid("photo"),
+        src: await compressPhoto(file),
+        alt: file.name.replace(/\.[^.]+$/, ""),
+      })
+    }
+    if (photos.length === 0) return
+    saveEntry({
+      petId: current.activePetId,
+      date: current.selectedDate,
+      photos: [...(existing?.photos ?? []), ...photos],
+    })
+  }, [saveEntry])
+
+  const removePhoto = useCallback(
+    (photoId: string) => {
+      const current = stateRef.current
+      const existing = current.entries.find(
+        (entry) =>
+          entry.petId === current.activePetId && entry.date === current.selectedDate
+      )
+      if (!existing || !current.activePetId) return
+      saveEntry({
+        petId: current.activePetId,
+        date: current.selectedDate,
+        photos: existing.photos.filter((photo) => photo.id !== photoId),
+      })
+    },
+    [saveEntry]
+  )
+
+  const saveStory = useCallback(
+    (draft: Omit<Story, "id" | "createdAt"> & { id?: string }) => {
+      const story: Story = {
+        ...draft,
+        id: draft.id ?? nid("story"),
+        createdAt: Date.now(),
+      }
+      dispatch({ type: "upsert-story", story })
+    },
+    []
+  )
+
+  const writeFromPorch = useCallback(
+    (entryId: string) => {
+      const current = stateRef.current
+      const entry = current.entries.find((item) => item.id === entryId)
+      const pet = entry ? current.pets.find((item) => item.id === entry.petId) : undefined
+      if (!entry || !pet || pet.ownerId === current.youId) return
+      const chatId = startChatWith(pet.ownerId)
+      later(() => {
+        sendMessage(
+          chatId,
+          `From the porch — ${pet.name}, ${entry.date}. ${entry.text.slice(0, 160)}`
+        )
+      }, 50)
+    },
+    [later, sendMessage, startChatWith]
+  )
+
+  const shareEntryToChat = useCallback(
+    (entryId: string, chatId: string) => {
+      const current = stateRef.current
+      const entry = current.entries.find((item) => item.id === entryId)
+      const pet = entry ? current.pets.find((item) => item.id === entry.petId) : undefined
+      if (!entry || !pet) return
+      dispatch({ type: "set-surface", surface: "notes" })
+      dispatch({ type: "select-chat", chatId })
+      later(() => {
+        sendMessage(
+          chatId,
+          `${pet.name} · ${entry.date}${entry.photos.length ? " · with a photo" : ""}. ${entry.text.slice(0, 180)}`
+        )
+      }, 50)
+    },
+    [later, sendMessage]
+  )
 
   const resetDemo = useCallback(() => {
     clearTimers()
     window.localStorage.removeItem(STORAGE_KEY)
-    dispatch({ type: "replace", snapshot: createSeedSnapshot(Date.now()) })
+    const snapshot = createSeedSnapshot(Date.now())
+    dispatch({ type: "replace", snapshot })
     dispatch({ type: "select-chat", chatId: null })
     dispatch({ type: "set-list-mode", mode: "chats" })
     dispatch({ type: "set-search", search: "" })
     dispatch({ type: "set-filter", filter: "all" })
+    dispatch({ type: "set-surface", surface: "daybook" })
   }, [clearTimers])
 
   const value: MessengerContextValue = {
@@ -549,7 +905,17 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     activeChat,
     visibleChats,
     archivedCount,
+    unreadNotes,
     contactById,
+    petById,
+    activePet,
+    activeStory,
+    yourPets,
+    selectedEntry,
+    porchEntries,
+    storiesFor,
+    entriesFor,
+    storyPages,
     messagesFor,
     lastMessage,
     selectChat,
@@ -557,6 +923,22 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     setSearch: (search) => dispatch({ type: "set-search", search }),
     setFilter: (filter) => dispatch({ type: "set-filter", filter }),
     setListMode: (mode) => dispatch({ type: "set-list-mode", mode }),
+    setSurface: (surface) => dispatch({ type: "set-surface", surface }),
+    setPet: (petId) => dispatch({ type: "set-pet", petId }),
+    setStory: (storyId) => dispatch({ type: "set-story", storyId }),
+    setDate: (date) => dispatch({ type: "set-date", date }),
+    setYear: (year) => dispatch({ type: "set-year", year }),
+    setYardFocus: (focus) => dispatch({ type: "set-yard-focus", focus }),
+    reshufflePorch: () => dispatch({ type: "reshuffle-porch" }),
+    savePet: (pet) => dispatch({ type: "upsert-pet", pet }),
+    saveStory,
+    closeStory: (storyId) => dispatch({ type: "close-story", storyId }),
+    saveEntry,
+    addPhotos,
+    removePhoto,
+    deleteEntry: (entryId) => dispatch({ type: "delete-entry", entryId }),
+    writeFromPorch,
+    shareEntryToChat,
     togglePin: (chatId) => dispatch({ type: "toggle-pin", chatId }),
     toggleMute: (chatId) => dispatch({ type: "toggle-mute", chatId }),
     toggleArchive: (chatId) => dispatch({ type: "toggle-archive", chatId }),

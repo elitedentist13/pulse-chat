@@ -82,9 +82,8 @@ export function Conversation({ className }: { className?: string }) {
             Sit down.
           </h1>
           <p className="mt-4 text-[16px] leading-7 text-[#6e6458]">
-            Kith keeps one conversation in the room. Pick a person from the
-            table, or a room from the hall — they write back in this demo, so
-            the talk stays alive.
+            Notes are the side table. The daybook is the house. Pick a person
+            or a hall room when a porch page needs a reply.
           </p>
           <p className="mt-8 text-xs text-[#6e6458]">
             Double-click a note to leave a heart. Nothing leaves this browser.
