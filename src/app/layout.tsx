@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Figtree, Fraunces, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const display = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+});
+
+const sans = Figtree({
+  variable: "--font-figtree",
   subsets: ["latin"],
 });
 
@@ -14,18 +19,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Relay",
+  title: "Kith",
   description:
-    "A WhatsApp-style messenger for the browser: chats, groups, status, and live replies.",
+    "A reading-room messenger: sit with one conversation at a time. Moods, rooms, and replies — no phone required.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${display.variable} ${sans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full overflow-hidden bg-[#0b141a] text-[#e9edef]">
+      <body className="min-h-full overflow-hidden bg-[#f6f1e8] text-[#1c1814]">
         <TooltipProvider delay={400}>{children}</TooltipProvider>
       </body>
     </html>

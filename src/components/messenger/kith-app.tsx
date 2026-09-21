@@ -6,18 +6,18 @@ import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
 import { useEffect } from "react"
 
-export function RelayApp() {
+export function KithApp() {
   const { activeChat } = useMessenger()
 
   useEffect(() => {
-    document.documentElement.dataset.relay = "ready"
+    document.documentElement.dataset.kith = "ready"
   }, [])
 
   return (
-    <div className="flex h-dvh min-h-0 bg-[#0b141a] text-[#e9edef]">
+    <div className="flex h-dvh min-h-0 bg-[#f6f1e8] text-[#1c1814]">
       <ChatList
         className={cn(
-          "w-full md:max-w-[420px] md:min-w-[340px]",
+          "w-full md:max-w-[380px] md:min-w-[320px]",
           activeChat ? "hidden md:flex" : "flex"
         )}
       />

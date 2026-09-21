@@ -41,23 +41,24 @@ export function NewChatDialog({
         if (!next) setQuery("")
       }}
     >
-      <DialogContent className="border-[#2a3942] bg-[#111b21] text-[#e9edef] sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New chat</DialogTitle>
-          <DialogDescription className="text-[#8696a0]">
-            Search your contacts and start a conversation.
+          <DialogTitle className="font-heading text-xl">
+            Pull up a chair
+          </DialogTitle>
+          <DialogDescription>
+            Find someone you already know and start a note.
           </DialogDescription>
         </DialogHeader>
         <Input
           value={query}
           placeholder="Search name or number"
           onChange={(event) => setQuery(event.target.value)}
-          className="border-0 bg-[#202c33] text-[#e9edef] placeholder:text-[#8696a0]"
         />
         <div className="max-h-80 overflow-y-auto">
           {contacts.length === 0 ? (
-            <p className="px-1 py-8 text-center text-sm text-[#8696a0]">
-              No contacts match “{query}”.
+            <p className="px-1 py-8 text-center text-sm text-[#6e6458]">
+              No one matches “{query}”.
             </p>
           ) : (
             <ul>
@@ -65,7 +66,7 @@ export function NewChatDialog({
                 <li key={contact.id}>
                   <Button
                     variant="ghost"
-                    className="h-auto w-full justify-start gap-3 rounded-none px-2 py-2.5 text-left hover:bg-white/5"
+                    className="h-auto w-full justify-start gap-3 rounded-xl px-2 py-2.5 text-left"
                     onClick={() => {
                       startChatWith(contact.id)
                       onOpenChange(false)
@@ -73,10 +74,10 @@ export function NewChatDialog({
                   >
                     <UserAvatar contact={contact} size="md" />
                     <span className="min-w-0">
-                      <span className="block truncate text-[#e9edef]">
+                      <span className="block truncate font-heading">
                         {contact.name}
                       </span>
-                      <span className="block truncate text-xs font-normal text-[#8696a0]">
+                      <span className="block truncate text-xs font-normal text-[#6e6458]">
                         {contact.about}
                       </span>
                     </span>

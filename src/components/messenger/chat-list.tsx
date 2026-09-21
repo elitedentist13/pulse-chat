@@ -3,7 +3,6 @@
 import { ChatRow } from "@/components/messenger/chat-row"
 import { NewChatDialog } from "@/components/messenger/new-chat-dialog"
 import { StatusViewer } from "@/components/messenger/status-viewer"
-import { GroupAvatar, UserAvatar } from "@/components/messenger/user-avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,8 +18,8 @@ import { cn } from "@/lib/utils"
 import {
   Archive,
   ArrowLeft,
-  MessageSquarePlus,
-  MoreVertical,
+  MoreHorizontal,
+  PenLine,
   RotateCcw,
   Search,
 } from "lucide-react"
@@ -57,120 +56,124 @@ export function ChatList({ className }: { className?: string }) {
 
   const emptyCopy =
     state.search.trim()
-      ? `No chats match “${state.search.trim()}”.`
+      ? `Nothing matches “${state.search.trim()}”.`
       : state.chatFilter === "unread"
-        ? "No unread chats."
+        ? "Nobody is waiting on you."
         : state.chatFilter === "groups"
-          ? "No group chats yet."
+          ? "No rooms yet."
           : state.listMode === "archived"
-            ? "No archived chats."
-            : "Start a conversation from the new chat button."
+            ? "The drawer is empty."
+            : "Invite someone to the table."
 
   return (
     <section
       className={cn(
-        "flex h-full min-h-0 w-full flex-col border-r border-[#222e35] bg-[#111b21]",
+        "desk-grain flex h-full min-h-0 w-full flex-col border-r border-[#e0d6c8]",
         className
       )}
     >
-      <header className="flex items-center gap-3 bg-[#202c33] px-3 py-2.5">
+      <header className="flex items-end justify-between gap-3 px-5 pt-6 pb-4">
         {state.listMode === "archived" ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-[#e9edef] hover:bg-white/5"
+          <button
+            type="button"
+            className="flex items-center gap-2 text-sm text-[#6e6458] hover:text-[#1c1814]"
             onClick={() => setListMode("chats")}
             aria-label="Back to chats"
           >
-            <ArrowLeft className="size-5" />
-          </Button>
+            <ArrowLeft className="size-4" />
+            Back to the table
+          </button>
         ) : (
-          <UserAvatar contact={you} size="md" />
+          <div>
+            <p className="font-heading text-3xl leading-none tracking-tight">
+              Kith
+            </p>
+            <p className="mt-1 text-sm text-[#6e6458]">{you.name}’s table</p>
+          </div>
         )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[16px] font-medium text-[#e9edef]">
-            {state.listMode === "archived" ? "Archived" : you.name}
-          </p>
-          <p className="truncate text-xs text-[#8696a0]">
-            {state.listMode === "archived"
-              ? `${archivedCount} chat${archivedCount === 1 ? "" : "s"}`
-              : "Relay for Web"}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-[#aebac1] hover:bg-white/5 hover:text-[#e9edef]"
-          onClick={() => setNewChatOpen(true)}
-          aria-label="New chat"
-        >
-          <MessageSquarePlus className="size-5" />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            nativeButton={false}
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#aebac1] hover:bg-white/5 hover:text-[#e9edef]"
-                aria-label="Menu"
-              />
-            }
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-[#6e6458] hover:bg-[#e7dccb] hover:text-[#1c1814]"
+            onClick={() => setNewChatOpen(true)}
+            aria-label="New chat"
           >
-            <MoreVertical className="size-5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="border-[#2a3942] bg-[#233138] text-[#e9edef]">
-            <DropdownMenuItem onClick={() => setNewChatOpen(true)}>
-              New chat
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setListMode("archived")}>
-              Archived chats
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-[#2a3942]" />
-            <DropdownMenuItem onClick={resetDemo}>
-              <RotateCcw className="size-4" />
-              Reset demo data
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <PenLine className="size-5" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              nativeButton={false}
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-[#6e6458] hover:bg-[#e7dccb] hover:text-[#1c1814]"
+                  aria-label="Menu"
+                />
+              }
+            >
+              <MoreHorizontal className="size-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setNewChatOpen(true)}>
+                Write someone new
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setListMode("archived")}>
+                Filed away
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={resetDemo}>
+                <RotateCcw className="size-4" />
+                Reset the table
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       {state.listMode === "chats" ? (
-        <div className="flex gap-2 overflow-x-auto px-3 pt-3 pb-1">
+        <div className="flex gap-2 overflow-x-auto px-5 pb-3">
           {statusItems.map(({ status, contact }) =>
             contact ? (
               <button
                 key={status.id}
                 type="button"
-                className="flex w-16 shrink-0 flex-col items-center gap-1"
+                className={cn(
+                  "max-w-[11rem] shrink-0 rounded-2xl border px-3 py-2 text-left transition-colors",
+                  status.viewed
+                    ? "border-[#e0d6c8] bg-[#f6f1e8]"
+                    : "border-[#b4452a]/30 bg-[#fbf7f0]"
+                )}
                 onClick={() => {
                   viewStatus(status.id)
                   setStatusId(status.id)
                 }}
               >
-                <UserAvatar
-                  contact={contact}
-                  size="md"
-                  ring={status.viewed ? "seen" : "unseen"}
-                />
-                <span className="w-full truncate text-center text-[11px] text-[#8696a0]">
-                  {contact.id === you.id ? "My status" : contact.name.split(" ")[0]}
+                <span className="block font-heading text-sm">
+                  {contact.id === you.id ? "Your mood" : contact.name.split(" ")[0]}
+                </span>
+                <span className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[#6e6458]">
+                  {status.text}
                 </span>
               </button>
             ) : null
           )}
         </div>
-      ) : null}
+      ) : (
+        <p className="px-5 pb-3 text-sm text-[#6e6458]">
+          {archivedCount} filed conversation{archivedCount === 1 ? "" : "s"}
+        </p>
+      )}
 
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-2 rounded-lg bg-[#202c33] px-3">
-          <Search className="size-4 text-[#8696a0]" />
+      <div className="px-5 pb-3">
+        <div className="flex items-center gap-2 rounded-full border border-[#e0d6c8] bg-[#fbf7f0] px-3">
+          <Search className="size-4 text-[#6e6458]" />
           <Input
             value={state.search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search or start a new chat"
-            className="h-9 border-0 bg-transparent px-0 text-sm text-[#e9edef] shadow-none placeholder:text-[#8696a0] focus-visible:ring-0 dark:bg-transparent"
+            placeholder="Look through the table"
+            className="h-9 border-0 bg-transparent px-0 text-sm shadow-none placeholder:text-[#6e6458] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
       </div>
@@ -181,12 +184,12 @@ export function ChatList({ className }: { className?: string }) {
           onValueChange={(value) =>
             setFilter(value as typeof state.chatFilter)
           }
-          className="px-3 pb-1"
+          className="px-5 pb-2"
         >
-          <TabsList className="h-8 w-full bg-[#202c33]">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unread">Unread</TabsTrigger>
-            <TabsTrigger value="groups">Groups</TabsTrigger>
+          <TabsList className="h-9 w-full bg-[#e7dccb]">
+            <TabsTrigger value="all">Open</TabsTrigger>
+            <TabsTrigger value="unread">Waiting</TabsTrigger>
+            <TabsTrigger value="groups">Rooms</TabsTrigger>
           </TabsList>
         </Tabs>
       ) : null}
@@ -195,21 +198,19 @@ export function ChatList({ className }: { className?: string }) {
         <button
           type="button"
           onClick={() => setListMode("archived")}
-          className="flex items-center gap-3 px-4 py-3 text-left text-sm text-[#e9edef] hover:bg-[#202c33]"
+          className="mx-5 mb-2 flex items-center gap-2 rounded-2xl border border-dashed border-[#e0d6c8] px-3 py-2 text-left text-sm text-[#6e6458] hover:bg-[#f6f1e8]"
         >
-          <span className="grid size-10 place-items-center rounded-full bg-[#00a884]/15 text-[#00a884]">
-            <Archive className="size-5" />
-          </span>
-          Archived
-          <span className="ml-auto text-xs text-[#8696a0]">{archivedCount}</span>
+          <Archive className="size-4" />
+          Filed away
+          <span className="ml-auto font-heading text-[#1c1814]">{archivedCount}</span>
         </button>
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {visibleChats.length === 0 ? (
           <div className="px-8 py-16 text-center">
-            <GroupAvatar title="Empty" className="mx-auto mb-3 opacity-70" />
-            <p className="text-sm text-[#8696a0]">{emptyCopy}</p>
+            <p className="font-heading text-xl">Quiet for now.</p>
+            <p className="mt-2 text-sm text-[#6e6458]">{emptyCopy}</p>
           </div>
         ) : (
           visibleChats.map((chat) => <ChatRow key={chat.id} chat={chat} />)

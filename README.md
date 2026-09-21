@@ -1,8 +1,8 @@
-# Relay
+# Kith
 
-A WhatsApp-style messenger that runs in the browser. Open a chat, send a message, and the other person types back. History stays in this browser — no account, no phone, no server.
+A messenger that treats a conversation like sitting down, not checking a phone. One person (or one room) on the table. Everyone else waits in the index.
 
-Relay is the fastest way to feel out a messenger: chat list, unread badges, groups, status, pin/mute/archive, and blue ticks.
+Kith reuses a working chat engine — seeded people, live demo replies, moods, rooms, keep/quiet/file — and throws out the WhatsApp chrome: no green bubbles, no double ticks, no story rings.
 
 ## Run locally
 
@@ -22,14 +22,14 @@ npm start
 
 ## What you can do
 
-- Browse seeded chats (Maya, Jordan, Saturday Volleyball, and more)
-- Search chats and filter All / Unread / Groups
-- Send messages — contacts type, then reply
-- Double-click a bubble to react
-- Open status updates from the row under the header
-- Start a new chat from contacts (try Sam Rivera)
-- Pin, mute, archive, or delete a chat
-- Reset the demo from the sidebar menu
+- Sit with Maya, Jordan, the Saturday court, or anyone waiting
+- Filter Open / Waiting / Rooms
+- Send a note — they write back
+- Double-click a note to leave a heart
+- Read moods along the top of the table
+- Pull up a chair for Sam Rivera
+- Keep, quiet, file away, or tear up a conversation
+- Reset the table from the menu
 
 ## Stack
 

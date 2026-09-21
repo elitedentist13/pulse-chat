@@ -49,18 +49,18 @@ export function formatLastSeen(contact: {
   online: boolean
   lastSeen: number
 }, now = Date.now()) {
-  if (contact.online) return "online"
+  if (contact.online) return "here"
   const delta = now - contact.lastSeen
-  if (delta < 2 * MINUTE) return "last seen just now"
+  if (delta < 2 * MINUTE) return "just stepped away"
   if (delta < HOUR) {
     const minutes = Math.max(1, Math.round(delta / MINUTE))
-    return `last seen ${minutes} min ago`
+    return `away ${minutes} min`
   }
   if (delta < 6 * HOUR) {
     const hours = Math.round(delta / HOUR)
-    return `last seen ${hours} hr${hours === 1 ? "" : "s"} ago`
+    return `away ${hours} hr${hours === 1 ? "" : "s"}`
   }
-  return `last seen ${formatChatTime(contact.lastSeen, now)} at ${formatClock(contact.lastSeen)}`
+  return `last around ${formatChatTime(contact.lastSeen, now)} · ${formatClock(contact.lastSeen)}`
 }
 
 export function sameDay(a: number, b: number) {

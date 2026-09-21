@@ -1,27 +1,31 @@
-import { Check, CheckCheck, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { MessageStatus } from "@/lib/types"
 
-export function MessageTicks({
+export function ReceiptMark({
   status,
   className,
 }: {
   status: MessageStatus
   className?: string
 }) {
-  if (status === "sending") {
-    return <Clock className={cn("size-3.5 opacity-70", className)} />
-  }
-  if (status === "sent") {
-    return <Check className={cn("size-3.5 opacity-80", className)} />
-  }
+  const label =
+    status === "sending"
+      ? "Writing"
+      : status === "sent"
+        ? "Sent"
+        : status === "delivered"
+          ? "Arrived"
+          : "Seen"
+
   return (
-    <CheckCheck
+    <span
       className={cn(
-        "size-3.5",
-        status === "read" ? "text-[#53bdeb]" : "opacity-80",
+        "font-heading text-[11px] tracking-wide",
+        status === "read" ? "text-[#b4452a]" : "text-[#6e6458]",
         className
       )}
-    />
+    >
+      {label}
+    </span>
   )
 }

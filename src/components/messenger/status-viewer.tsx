@@ -22,7 +22,7 @@ export function StatusViewer({
   return (
     <Dialog open={Boolean(statusId)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-md overflow-hidden border-0 bg-[#0b141a] p-0 text-[#e9edef] sm:max-w-md"
+        className="max-w-md overflow-hidden border-[#e0d6c8] bg-[#fbf7f0] p-0 sm:max-w-md"
         showCloseButton
       >
         {statusId ? (
@@ -62,30 +62,25 @@ function StatusPlayback({
   if (!status || !contact) return null
 
   return (
-    <div
-      className="flex min-h-[420px] flex-col"
-      style={{ background: `linear-gradient(160deg, ${status.accent}, #0b141a)` }}
-    >
-      <div className="px-4 pt-4">
-        <div className="h-1 overflow-hidden rounded-full bg-white/25">
+    <div className="flex min-h-[380px] flex-col bg-[#efe8dc]">
+      <div className="px-5 pt-5">
+        <div className="h-1 overflow-hidden rounded-full bg-[#e0d6c8]">
           <div
-            className="h-full bg-white transition-[width] duration-75"
+            className="h-full bg-[#b4452a] transition-[width] duration-75"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <DialogHeader className="mt-3 flex-row items-center gap-3 space-y-0">
+        <DialogHeader className="mt-4 flex-row items-center gap-3 space-y-0">
           <UserAvatar contact={contact} size="sm" />
           <div className="text-left">
-            <DialogTitle className="text-sm text-white">
-              {contact.id === you.id ? "My status" : contact.name}
+            <DialogTitle className="font-heading text-base">
+              {contact.id === you.id ? "Your mood" : contact.name}
             </DialogTitle>
-            <DialogDescription className="text-xs text-white/70">
-              {formatClock(status.createdAt)}
-            </DialogDescription>
+            <DialogDescription>{formatClock(status.createdAt)}</DialogDescription>
           </div>
         </DialogHeader>
       </div>
-      <p className="flex flex-1 items-center justify-center px-8 text-center text-2xl font-medium leading-snug text-white">
+      <p className="flex flex-1 items-center justify-center px-8 text-center font-heading text-3xl leading-snug text-[#1c1814]">
         {status.text}
       </p>
     </div>

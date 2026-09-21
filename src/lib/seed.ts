@@ -163,7 +163,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     id: "sam",
     name: "Sam Rivera",
     phone: "+1 (323) 555-0188",
-    about: "Hey there! I am using Relay.",
+    about: "Saving a chair at the table.",
     color: colors.slate,
     online: false,
     lastSeen: days(2),
@@ -232,7 +232,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     {
       id: "chat-volleyball",
       kind: "group",
-      title: "Saturday Volleyball",
+      title: "Saturday court",
       participantIds: [YOU_ID, aisha.id, jordan.id, noah.id, sam.id],
       pinned: false,
       muted: false,
@@ -351,7 +351,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     {
       id: "st-you",
       contactId: YOU_ID,
-      text: "Building a messenger that doesn’t need your phone in the other room.",
+      text: "Keeping one conversation in the room at a time.",
       createdAt: hours(5),
       viewed: true,
       accent: colors.teal,

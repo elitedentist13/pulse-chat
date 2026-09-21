@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageTicks } from "@/components/messenger/message-ticks"
+import { ReceiptMark } from "@/components/messenger/message-ticks"
 import { UserAvatar } from "@/components/messenger/user-avatar"
 import { formatClock, formatDateSeparator, sameDay } from "@/lib/format"
 import { useMessenger } from "@/lib/messenger-store"
@@ -23,92 +23,95 @@ export function MessageThread({ chatId }: { chatId: string }) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-        <p className="rounded-full bg-black/30 px-4 py-1.5 text-sm text-[#e9edef]">
-          No messages here yet. Say hello.
+        <p className="font-heading text-2xl">The table is empty.</p>
+        <p className="mt-2 max-w-sm text-sm text-[#6e6458]">
+          Write the first line. They’ll answer from the other chair.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-0 w-full flex-1 overflow-y-auto px-3 py-3 md:px-8">
-      {messages.map((message, index) => {
-        const previous = messages[index - 1]
-        const showDate =
-          !previous || !sameDay(previous.sentAt, message.sentAt)
-        const fromMe = message.senderId === you.id
-        const sender = contactById(message.senderId)
-        const showSender =
-          !fromMe &&
-          (!previous ||
-            previous.senderId !== message.senderId ||
-            showDate)
-        const isGroup = chat?.kind === "group"
+    <div className="min-h-0 w-full flex-1 overflow-y-auto px-4 py-6 md:px-10">
+      <div className="mx-auto max-w-2xl">
+        {messages.map((message, index) => {
+          const previous = messages[index - 1]
+          const showDate = !previous || !sameDay(previous.sentAt, message.sentAt)
+          const fromMe = message.senderId === you.id
+          const sender = contactById(message.senderId)
+          const showSender =
+            !previous || previous.senderId !== message.senderId || showDate
+          const isLastFromMe =
+            fromMe &&
+            !messages.slice(index + 1).some((item) => item.senderId === you.id)
 
-        return (
-          <div key={message.id} className="w-full">
-            {showDate ? (
-              <div className="my-3 flex justify-center">
-                <span className="rounded-md bg-[#182229] px-3 py-1 text-xs font-medium text-[#8696a0] shadow-sm">
+          return (
+            <div key={message.id} className="w-full">
+              {showDate ? (
+                <p className="my-6 text-center font-heading text-xs tracking-[0.2em] text-[#6e6458] uppercase">
                   {formatDateSeparator(message.sentAt)}
-                </span>
-              </div>
-            ) : null}
-            <div
-              className={cn(
-                "mb-0.5 flex w-full",
-                fromMe ? "justify-end" : "justify-start"
-              )}
-            >
-              <button
-                type="button"
-                onDoubleClick={() => reactToMessage(message.id)}
+                </p>
+              ) : null}
+              <article
                 className={cn(
-                  "relative max-w-[85%] rounded-lg px-2.5 pt-1.5 pb-1 text-left text-[14.5px] leading-5 text-[#e9edef] shadow-sm md:max-w-[65%]",
-                  fromMe
-                    ? "rounded-tr-none bg-[#005c4b]"
-                    : "rounded-tl-none bg-[#202c33]",
-                  message.reaction && "mb-3"
+                  "mb-4 w-full max-w-[34rem]",
+                  fromMe ? "ml-auto" : "mr-auto"
                 )}
               >
-                {isGroup && showSender && sender ? (
-                  <span
-                    className="mb-0.5 block text-xs font-semibold"
-                    style={{ color: sender.color }}
-                  >
-                    {sender.name}
-                  </span>
+                {showSender ? (
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3 px-1">
+                    <p className="font-heading text-sm text-[#1c1814]">
+                      {fromMe ? "You" : sender?.name}
+                    </p>
+                    <p className="text-[11px] text-[#6e6458]">
+                      {formatClock(message.sentAt)}
+                    </p>
+                  </div>
                 ) : null}
-                <span className="whitespace-pre-wrap break-words">
-                  {message.text}
-                </span>
-                <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-[#ffffff99]">
-                  {formatClock(message.sentAt)}
-                  {fromMe ? <MessageTicks status={message.status} /> : null}
-                </span>
-                {message.reaction ? (
-                  <span className="absolute -bottom-3 left-2 rounded-full bg-[#202c33] px-1.5 text-xs shadow ring-1 ring-black/40">
-                    {message.reaction}
+                <button
+                  type="button"
+                  onDoubleClick={() => reactToMessage(message.id)}
+                  className={cn(
+                    "relative w-full rounded-[1.4rem] px-4 py-3 text-left text-[15px] leading-6",
+                    fromMe
+                      ? "bg-[#f0d9c4] text-[#1c1814]"
+                      : "bg-white text-[#1c1814] shadow-[0_10px_30px_-24px_rgba(28,24,20,0.7)] ring-1 ring-[#e0d6c8]",
+                    message.reaction && "mb-3"
+                  )}
+                >
+                  <span className="whitespace-pre-wrap break-words">
+                    {message.text}
                   </span>
+                  {message.reaction ? (
+                    <span className="absolute -bottom-3 left-4 rounded-full bg-white px-1.5 text-xs shadow-sm ring-1 ring-[#e0d6c8]">
+                      {message.reaction}
+                    </span>
+                  ) : null}
+                </button>
+                {isLastFromMe ? (
+                  <p className="mt-1 px-1 text-right">
+                    <ReceiptMark status={message.status} />
+                  </p>
                 ) : null}
-              </button>
+              </article>
             </div>
-          </div>
-        )
-      })}
-      {typingContact ? (
-        <div className="mt-2 flex items-center gap-2 text-sm text-[#8696a0]">
-          <UserAvatar contact={typingContact} size="sm" />
-          <span className="rounded-lg rounded-tl-none bg-[#202c33] px-3 py-2">
-            <span className="inline-flex gap-1">
-              <span className="size-1.5 animate-bounce rounded-full bg-[#8696a0] [animation-delay:-0.2s]" />
-              <span className="size-1.5 animate-bounce rounded-full bg-[#8696a0] [animation-delay:-0.1s]" />
-              <span className="size-1.5 animate-bounce rounded-full bg-[#8696a0]" />
+          )
+        })}
+        {typingContact ? (
+          <div className="mb-6 flex items-center gap-3 text-sm text-[#6e6458]">
+            <UserAvatar contact={typingContact} size="sm" />
+            <span className="italic">
+              {typingContact.name.split(" ")[0]} is still writing
+              <span className="ml-1 inline-flex gap-0.5">
+                <span className="size-1 animate-bounce rounded-full bg-[#b4452a] [animation-delay:-0.2s]" />
+                <span className="size-1 animate-bounce rounded-full bg-[#b4452a] [animation-delay:-0.1s]" />
+                <span className="size-1 animate-bounce rounded-full bg-[#b4452a]" />
+              </span>
             </span>
-          </span>
-        </div>
-      ) : null}
-      <div ref={bottomRef} />
+          </div>
+        ) : null}
+        <div ref={bottomRef} />
+      </div>
     </div>
   )
 }

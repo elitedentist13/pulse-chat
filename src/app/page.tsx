@@ -1,10 +1,10 @@
-import { RelayApp } from "@/components/messenger/relay-app"
+import { KithApp } from "@/components/messenger/kith-app"
 import { MessengerProvider } from "@/lib/messenger-store"
 
 export default function Home() {
   return (
     <MessengerProvider>
-      <RelayApp />
+      <KithApp />
     </MessengerProvider>
   )
 }
