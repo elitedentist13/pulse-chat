@@ -101,6 +101,7 @@ export function Conversation({ className }: { className?: string }) {
         <button
           type="button"
           className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left hover:bg-white/5"
+          data-contact-header
           onClick={() => setInfoOpen(true)}
         >
           {direct ? (

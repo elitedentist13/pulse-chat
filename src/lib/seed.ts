@@ -310,8 +310,8 @@ export function createSeedSnapshot(now = Date.now()): MessengerSnapshot {
     m("m5", "chat-maya", maya.id, "Done. Dropped a preview in the file — tell me if the green is too loud.", minutes(18), "read"),
     m("m6", "chat-maya", YOU_ID, "That green is perfect. Ship it.", minutes(11), "read"),
 
-    m("m7", "chat-jordan", jordan.id, "Trailhead at 6. I’m bringing the little stove.", days(1) + hours(2), "read"),
-    m("m8", "chat-jordan", YOU_ID, "I’ll take fruit and the first-aid kit.", days(1) + hours(1.7), "read"),
+    m("m7", "chat-jordan", jordan.id, "Trailhead at 6. I’m bringing the little stove.", days(1) - 2 * 3_600_000, "read"),
+    m("m8", "chat-jordan", YOU_ID, "I’ll take fruit and the first-aid kit.", days(1) - 1.7 * 3_600_000, "read"),
     m("m9", "chat-jordan", jordan.id, "Leave an extra layer in the car. Wind is rude up there.", hours(9), "read"),
     m("m10", "chat-jordan", YOU_ID, "Set two alarms. I mean it.", hours(8.6), "read"),
     m("m11", "chat-jordan", jordan.id, "Coffee is on me if you actually show up on time.", minutes(4), "delivered"),
@@ -324,7 +324,7 @@ export function createSeedSnapshot(now = Date.now()): MessengerSnapshot {
     m("m17", "chat-volleyball", aisha.id, "Yes. Same time, new nets. Wear something you can slide in.", minutes(16), "delivered"),
 
     m("m18", "chat-priya", priya.id, "Sunday lunch is at 1. Dad already bought too much.", days(2), "read"),
-    m("m19", "chat-priya", YOU_ID, "I’ll bring the citrus salad. Need anything from the store?", days(2) - hours(1), "read"),
+    m("m19", "chat-priya", YOU_ID, "I’ll bring the citrus salad. Need anything from the store?", days(2) + 3_600_000, "read"),
     m("m20", "chat-priya", priya.id, "Limes and whatever sparkling water is on sale.", hours(26), "read"),
     m("m21", "chat-priya", YOU_ID, "Got it. I’ll come early and help set up.", hours(20), "read"),
 
@@ -334,7 +334,7 @@ export function createSeedSnapshot(now = Date.now()): MessengerSnapshot {
     m("m25", "chat-aisha", YOU_ID, "Will do. Tests are in.", minutes(90), "read"),
 
     m("m26", "chat-luca", luca.id, "Cut looks strong. Can the title card sit 8 frames longer?", days(3), "read"),
-    m("m27", "chat-luca", YOU_ID, "Easy. I’ll send a new export this afternoon.", days(3) - minutes(40), "read"),
+    m("m27", "chat-luca", YOU_ID, "Easy. I’ll send a new export this afternoon.", days(3) + 40 * 60_000, "read"),
     m("m28", "chat-luca", luca.id, "Invoice is attached in email. No rush — whenever finance is ready.", hours(30), "read"),
     m("m29", "chat-luca", YOU_ID, "Forwarded. They usually turn it around in two days.", hours(28), "read"),
 

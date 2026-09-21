@@ -13,7 +13,7 @@ import {
 import { createSeedSnapshot } from "@/lib/seed"
 import type { Chat, Contact, Message, MessengerSnapshot, StatusUpdate } from "@/lib/types"
 
-const STORAGE_KEY = "relay-messenger-v1"
+const STORAGE_KEY = "relay-messenger-v2"
 
 type ChatFilter = "all" | "unread" | "groups"
 
