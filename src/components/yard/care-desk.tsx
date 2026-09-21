@@ -5,6 +5,13 @@ import { MediaTile } from "@/components/yard/media-tile"
 import { PetTabs } from "@/components/yard/pet-tabs"
 import { PortraitButton } from "@/components/yard/portrait-button"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { formatDiaryDate, reminderDue, toDateKey } from "@/lib/dates"
@@ -16,6 +23,7 @@ import {
   VIDEO_MAX_BYTES,
   VIDEO_MAX_SECONDS,
 } from "@/lib/media"
+import { purgeMediaBlobs } from "@/lib/media-db"
 import { useMessenger } from "@/lib/messenger-store"
 import type { CareKind, CareRecord, DiaryPhoto } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -183,6 +191,9 @@ function CareStrip({
   const { t, tag } = useLocale()
   const scroller = useRef<HTMLDivElement>(null)
   const slides = slidesFrom(records)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const openIndex = slides.findIndex((slide) => slide.media.id === openId)
+  const openSlide = openIndex >= 0 ? slides[openIndex] : null
 
   function scrollByCard(direction: -1 | 1) {
     const node = scroller.current
@@ -249,20 +260,40 @@ function CareStrip({
             <article
               key={`${slide.record.id}-${slide.media.id}`}
               data-care-slide={slide.media.id}
-              className="w-[min(20rem,82vw)] shrink-0 snap-start overflow-hidden rounded-[1.4rem] border border-[#e0d6c8] bg-white"
+              className={cn(
+                "w-[min(20rem,82vw)] shrink-0 snap-start overflow-hidden rounded-[1.4rem] border bg-white",
+                openId === slide.media.id
+                  ? "border-[#b4452a]/50 ring-2 ring-[#b4452a]/20"
+                  : "border-[#e0d6c8]"
+              )}
             >
               <div className="relative">
-                <MediaTile item={slide.media} fit="wide" />
+                <button
+                  type="button"
+                  data-care-slide-open={slide.media.id}
+                  className="block w-full text-left"
+                  onClick={() => setOpenId(slide.media.id)}
+                >
+                  <MediaTile item={slide.media} fit="wide" />
+                </button>
                 <button
                   type="button"
                   className="absolute top-2 right-2 z-10 rounded-full bg-[#fbf7f0]/90 p-1"
                   aria-label={t("removePhoto")}
-                  onClick={() => onRemove(slide.record.id, slide.media.id)}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onRemove(slide.record.id, slide.media.id)
+                    if (openId === slide.media.id) setOpenId(null)
+                  }}
                 >
                   <X className="size-3" />
                 </button>
               </div>
-              <div className="px-3 py-3">
+              <button
+                type="button"
+                className="w-full px-3 py-3 text-left"
+                onClick={() => setOpenId(slide.media.id)}
+              >
                 <p className="text-xs text-[#6e6458]">
                   {formatDiaryDate(slide.record.date, tag)}
                 </p>
@@ -275,14 +306,207 @@ function CareStrip({
                 {slide.record.detail ? (
                   <p className="mt-1 text-sm leading-6">{slide.record.detail}</p>
                 ) : null}
-              </div>
+                <p className="mt-2 text-[11px] text-[#6e6458]">{t("clickToEdit")}</p>
+              </button>
             </article>
           ))}
         </div>
       )}
 
       <SlideForm petId={petId} kind={kind} onSave={onSave} />
+
+      <Dialog open={Boolean(openSlide)} onOpenChange={(open) => !open && setOpenId(null)}>
+        <DialogContent
+          className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+          showCloseButton
+        >
+          {openSlide ? (
+            <SlideLightbox
+              key={`${openSlide.record.id}-${openSlide.media.id}`}
+              slide={openSlide}
+              hasPrev={openIndex > 0}
+              hasNext={openIndex < slides.length - 1}
+              onPrev={() => setOpenId(slides[openIndex - 1]?.media.id ?? null)}
+              onNext={() => setOpenId(slides[openIndex + 1]?.media.id ?? null)}
+              onSave={onSave}
+              onRemove={(recordId, mediaId) => {
+                onRemove(recordId, mediaId)
+                setOpenId(null)
+              }}
+              onSaved={(mediaId) => setOpenId(mediaId)}
+              onClose={() => setOpenId(null)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
+  )
+}
+
+function SlideLightbox({
+  slide,
+  hasPrev,
+  hasNext,
+  onPrev,
+  onNext,
+  onSave,
+  onRemove,
+  onSaved,
+  onClose,
+}: {
+  slide: Slide
+  hasPrev: boolean
+  hasNext: boolean
+  onPrev: () => void
+  onNext: () => void
+  onSave: (record: Omit<CareRecord, "id"> & { id?: string }) => void
+  onRemove: (recordId: string, mediaId: string) => void
+  onSaved: (mediaId: string) => void
+  onClose: () => void
+}) {
+  const { t } = useLocale()
+  const [caption, setCaption] = useState(slide.record.title)
+  const [date, setDate] = useState(slide.record.date)
+  const [note, setNote] = useState(slide.record.detail)
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<DiaryPhoto>(slide.media)
+  const [mediaError, setMediaError] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  async function onPick(next?: File) {
+    if (!next) return
+    setMediaError("")
+    try {
+      setPreview(await ingestMedia(next))
+      setFile(next)
+    } catch (error) {
+      if (error instanceof MediaLimitError) {
+        const key =
+          error.code === "too-long"
+            ? "videoTooLong"
+            : error.code === "too-heavy"
+              ? "videoTooHeavy"
+              : "videoUnreadable"
+        setMediaError(t(key, { seconds: error.seconds, mb: error.mb }))
+        return
+      }
+      setMediaError(t("videoUnreadable"))
+    }
+  }
+
+  async function submit() {
+    setSaving(true)
+    setMediaError("")
+    try {
+      let media = slide.media
+      if (file) {
+        media = preview.id === slide.media.id ? await ingestMedia(file) : preview
+        if (slide.media.id !== media.id) {
+          await purgeMediaBlobs([slide.media])
+        }
+      }
+      const attachments = slide.record.attachments.map((item) =>
+        item.id === slide.media.id ? media : item
+      )
+      onSave({
+        ...slide.record,
+        date,
+        title: caption.trim() || media.alt,
+        detail: note.trim(),
+        attachments,
+      })
+      onSaved(media.id)
+      onClose()
+    } catch (error) {
+      if (error instanceof MediaLimitError) {
+        setMediaError(t("videoUnreadable"))
+      } else {
+        setMediaError(t("videoUnreadable"))
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div data-care-lightbox>
+      <DialogHeader>
+        <DialogTitle className="font-heading text-xl">{t("editSlide")}</DialogTitle>
+        <DialogDescription>{t("clickToEdit")}</DialogDescription>
+      </DialogHeader>
+      <div className="overflow-hidden rounded-[1.2rem] bg-[#efe8dc]">
+        <MediaTile item={preview} fit="wide" />
+      </div>
+      <div className="flex items-center justify-between">
+        <Button type="button" size="sm" variant="outline" disabled={!hasPrev} onClick={onPrev}>
+          <ChevronLeft className="size-4" />
+        </Button>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[#6e6458]">
+          <ImagePlus className="size-4" />
+          {t("changeMedia")}
+          <input
+            type="file"
+            accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
+            className="sr-only"
+            onChange={(event) => {
+              void onPick(event.target.files?.[0])
+              event.target.value = ""
+            }}
+          />
+        </label>
+        <Button type="button" size="sm" variant="outline" disabled={!hasNext} onClick={onNext}>
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="grid gap-1 text-sm">
+          {t("slideCaption")}
+          <Input
+            data-slide-caption
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          {t("slideDate")}
+          <Input
+            type="date"
+            data-slide-date
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
+        </label>
+      </div>
+      <label className="grid gap-1 text-sm">
+        {t("slideNote")}
+        <Textarea
+          data-slide-note
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+        />
+      </label>
+      <p className="text-xs text-[#6e6458]">
+        {t("videoHint", {
+          seconds: VIDEO_MAX_SECONDS,
+          mb: VIDEO_MAX_BYTES / (1024 * 1024),
+        })}
+      </p>
+      {mediaError ? (
+        <p className="text-sm text-[#9f2d2d]">{mediaError}</p>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" data-slide-save onClick={() => void submit()} disabled={saving}>
+          {saving ? t("addingMedia") : t("saveSlide")}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => onRemove(slide.record.id, slide.media.id)}
+        >
+          {t("tearUp")}
+        </Button>
+      </div>
+    </div>
   )
 }
 
