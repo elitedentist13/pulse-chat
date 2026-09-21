@@ -199,9 +199,15 @@ export function ChatList({ className }: { className?: string }) {
           className="px-5 pb-2"
         >
           <TabsList className="h-9 w-full bg-[#e7dccb]">
-            <TabsTrigger value="all">{t("filterOpen")}</TabsTrigger>
-            <TabsTrigger value="unread">{t("filterWaiting")}</TabsTrigger>
-            <TabsTrigger value="groups">{t("filterHall")}</TabsTrigger>
+            <TabsTrigger value="all" data-chat-filter="all">
+              {t("filterOpen")}
+            </TabsTrigger>
+            <TabsTrigger value="unread" data-chat-filter="unread">
+              {t("filterWaiting")}
+            </TabsTrigger>
+            <TabsTrigger value="groups" data-chat-filter="groups">
+              {t("filterHall")}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       ) : null}

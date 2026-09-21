@@ -26,6 +26,16 @@ npm run build
 npm start -- --port 43217
 ```
 
+## Live tests
+
+With the app serving on port 43217, Chrome, and `puppeteer-core` available:
+
+```bash
+npm run test:live
+```
+
+That run covers HTTP/API status checks, CDP `Runtime.evaluate` against the live page, smoke of the shell, spot checks of Profile / Care / Talent / i18n, and client flows (lightbox save, 15s video cap, porch, notes, hall).
+
 ## What you can do
 
 - Open Juniper’s daybook and write any day of the year
