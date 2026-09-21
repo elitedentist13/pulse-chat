@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatChatTime } from "@/lib/format"
 import { useMessenger } from "@/lib/messenger-store"
+import { topicMeta } from "@/lib/topics"
 import { cn } from "@/lib/utils"
 import type { Chat } from "@/lib/types"
 import { BellOff, MoreHorizontal, Pin } from "lucide-react"
@@ -40,6 +41,7 @@ export function ChatRow({ chat }: { chat: Chat }) {
       ? contactById(message.senderId)
       : undefined
   const active = state.activeChatId === chat.id
+  const room = chat.kind === "group" ? topicMeta(chat.topic) : null
 
   return (
     <div
@@ -60,13 +62,21 @@ export function ChatRow({ chat }: { chat: Chat }) {
         {direct ? (
           <UserAvatar contact={direct} size="md" />
         ) : (
-          <GroupAvatar title={chat.title} />
+          <GroupAvatar title={chat.title} topic={chat.topic} />
         )}
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-2">
             <span className="truncate font-heading text-[1.15rem] leading-tight text-[#1c1814]">
               {chat.title}
             </span>
+            {room ? (
+              <span
+                className="shrink-0 text-[10px] tracking-[0.16em] uppercase"
+                style={{ color: room.ink }}
+              >
+                {room.label}
+              </span>
+            ) : null}
             {chat.pinned ? (
               <Pin className="size-3 shrink-0 text-[#b4452a]" />
             ) : null}

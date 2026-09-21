@@ -16,10 +16,12 @@ export function Composer({
   disabled,
   onSend,
   toName,
+  address = "to",
 }: {
   disabled?: boolean
   onSend: (text: string) => void
   toName: string
+  address?: "to" | "in"
 }) {
   const [value, setValue] = useState("")
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -104,7 +106,7 @@ export function Composer({
           rows={1}
           value={value}
           disabled={disabled}
-          placeholder={`Write to ${toName}`}
+          placeholder={`Write ${address} ${toName}`}
           className={cn(
             "max-h-[140px] min-h-10 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-[15px] text-[#1c1814] outline-none placeholder:text-[#6e6458]"
           )}

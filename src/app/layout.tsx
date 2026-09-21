@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kith",
   description:
-    "A reading-room messenger: sit with one conversation at a time. Moods, rooms, and replies — no phone required.",
+    "A reading-room messenger: sit with one conversation at a time. The hall holds craft, body, kin, and work rooms.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

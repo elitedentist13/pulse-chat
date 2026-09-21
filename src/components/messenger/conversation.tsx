@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatLastSeen } from "@/lib/format"
 import { useMessenger } from "@/lib/messenger-store"
+import { topicMeta } from "@/lib/topics"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, MoreHorizontal, Search } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -41,6 +42,15 @@ export function Conversation({ className }: { className?: string }) {
     ? contactById(activeChat.typingContactId)
     : undefined
 
+  const room = activeChat?.kind === "group" ? topicMeta(activeChat.topic) : null
+  const faces = useMemo(() => {
+    if (!activeChat || activeChat.kind !== "group") return []
+    return activeChat.participantIds
+      .filter((id) => id !== you.id)
+      .map((id) => contactById(id))
+      .filter((person): person is NonNullable<typeof person> => Boolean(person))
+  }, [activeChat, contactById, you.id])
+
   const subtitle = useMemo(() => {
     if (!activeChat) return ""
     if (typing) {
@@ -49,6 +59,7 @@ export function Conversation({ className }: { className?: string }) {
         : "still writing…"
     }
     if (direct) return formatLastSeen(direct)
+    if (activeChat.blurb) return activeChat.blurb
     const names = activeChat.participantIds
       .map((id) => (id === you.id ? "You" : contactById(id)?.name.split(" ")[0]))
       .filter(Boolean)
@@ -72,7 +83,8 @@ export function Conversation({ className }: { className?: string }) {
           </h1>
           <p className="mt-4 text-[16px] leading-7 text-[#6e6458]">
             Kith keeps one conversation in the room. Pick a person from the
-            table — they write back in this demo, so the talk stays alive.
+            table, or a room from the hall — they write back in this demo, so
+            the talk stays alive.
           </p>
           <p className="mt-8 text-xs text-[#6e6458]">
             Double-click a note to leave a heart. Nothing leaves this browser.
@@ -108,20 +120,52 @@ export function Conversation({ className }: { className?: string }) {
           {direct ? (
             <UserAvatar contact={direct} size="md" />
           ) : (
-            <GroupAvatar title={activeChat.title} size="md" />
+            <GroupAvatar
+              title={activeChat.title}
+              size="md"
+              topic={activeChat.topic}
+            />
           )}
-          <span className="min-w-0">
-            <span className="block truncate font-heading text-xl leading-tight">
-              {activeChat.title}
+          <span className="min-w-0 flex-1">
+            <span className="flex items-baseline gap-2">
+              <span className="truncate font-heading text-xl leading-tight">
+                {activeChat.title}
+              </span>
+              {room ? (
+                <span
+                  className="shrink-0 text-[10px] tracking-[0.16em] uppercase"
+                  style={{ color: room.ink }}
+                  data-room-topic={activeChat.topic}
+                >
+                  {room.label}
+                </span>
+              ) : null}
             </span>
             <span
               className={cn(
-                "block truncate text-xs",
+                "mt-0.5 block truncate text-xs",
                 typing ? "text-[#b4452a]" : "text-[#6e6458]"
               )}
             >
               {subtitle}
             </span>
+            {faces.length > 0 ? (
+              <span className="mt-1.5 flex items-center gap-2">
+                <span className="flex -space-x-1.5">
+                  {faces.slice(0, 4).map((person) => (
+                    <UserAvatar
+                      key={person.id}
+                      contact={person}
+                      size="sm"
+                      className="ring-2 ring-[#fbf7f0]"
+                    />
+                  ))}
+                </span>
+                <span className="truncate text-[11px] text-[#6e6458]">
+                  {faces.map((person) => person.name.split(" ")[0]).join(" · ")}
+                </span>
+              </span>
+            ) : null}
           </span>
         </button>
         <Button
@@ -185,6 +229,7 @@ export function Conversation({ className }: { className?: string }) {
       </div>
       <Composer
         toName={direct ? direct.name.split(" ")[0] : activeChat.title}
+        address={direct ? "to" : "in"}
         onSend={(text) => sendMessage(activeChat.id, text)}
       />
       <ContactInfo

@@ -1,6 +1,7 @@
 "use client"
 
 import { ChatRow } from "@/components/messenger/chat-row"
+import { Hall } from "@/components/messenger/hall"
 import { NewChatDialog } from "@/components/messenger/new-chat-dialog"
 import { StatusViewer } from "@/components/messenger/status-viewer"
 import { Button } from "@/components/ui/button"
@@ -60,7 +61,7 @@ export function ChatList({ className }: { className?: string }) {
       : state.chatFilter === "unread"
         ? "Nobody is waiting on you."
         : state.chatFilter === "groups"
-          ? "No rooms yet."
+          ? "The hall is empty."
           : state.listMode === "archived"
             ? "The drawer is empty."
             : "Invite someone to the table."
@@ -88,7 +89,9 @@ export function ChatList({ className }: { className?: string }) {
             <p className="font-heading text-3xl leading-none tracking-tight">
               Kith
             </p>
-            <p className="mt-1 text-sm text-[#6e6458]">{you.name}’s table</p>
+            <p className="mt-1 text-sm text-[#6e6458]">
+              {state.chatFilter === "groups" ? "The hall" : `${you.name}’s table`}
+            </p>
           </div>
         )}
         <div className="flex items-center gap-1">
@@ -189,7 +192,7 @@ export function ChatList({ className }: { className?: string }) {
           <TabsList className="h-9 w-full bg-[#e7dccb]">
             <TabsTrigger value="all">Open</TabsTrigger>
             <TabsTrigger value="unread">Waiting</TabsTrigger>
-            <TabsTrigger value="groups">Rooms</TabsTrigger>
+            <TabsTrigger value="groups">Hall</TabsTrigger>
           </TabsList>
         </Tabs>
       ) : null}
@@ -207,7 +210,9 @@ export function ChatList({ className }: { className?: string }) {
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {visibleChats.length === 0 ? (
+        {state.listMode === "chats" && state.chatFilter === "groups" ? (
+          <Hall />
+        ) : visibleChats.length === 0 ? (
           <div className="px-8 py-16 text-center">
             <p className="font-heading text-xl">Quiet for now.</p>
             <p className="mt-2 text-sm text-[#6e6458]">{emptyCopy}</p>

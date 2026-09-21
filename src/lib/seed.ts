@@ -45,6 +45,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     lastSeen: now,
     replyBank: [],
     initials: "MN",
+    interests: ["craft", "work"],
   })
 
   const maya = contact({
@@ -61,6 +62,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Can you glance at the spacing on the composer?",
       "Yes. I’ll ping you when the palette is locked.",
     ],
+    interests: ["craft", "design", "palette", "mock", "composer"],
   })
 
   const jordan = contact({
@@ -77,6 +79,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Leave the extra layer in the car just in case.",
       "Haha ok ok I’ll actually set an alarm.",
     ],
+    interests: ["body", "trail", "wind", "stove", "alarm"],
   })
 
   const priya = contact({
@@ -93,6 +96,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "I’ll save you a plate if traffic is awful.",
       "Yes, dad is grilling. Don’t skip this one.",
     ],
+    interests: ["kin", "lunch", "salad", "limes", "family"],
   })
 
   const luca = contact({
@@ -109,6 +113,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Can we keep the brand mark a little quieter?",
       "Noted — I’ll adjust the timeline.",
     ],
+    interests: ["work", "craft", "cut", "invoice", "title"],
   })
 
   const aisha = contact({
@@ -125,6 +130,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "That edge case is real — I’ll add a fixture.",
       "Done. Check the latest commit.",
     ],
+    interests: ["craft", "code", "tests", "badge", "fixture"],
   })
 
   const noah = contact({
@@ -141,6 +147,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Leaving the spare key under the plant.",
       "Movie night still on if you’re home by 8.",
     ],
+    interests: ["kin", "body", "court", "pump", "water"],
   })
 
   const elena = contact({
@@ -157,6 +164,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "I’ll send the deck after I land.",
       "That works. Thank you for waiting.",
     ],
+    interests: ["work", "briefing", "board", "deck"],
   })
 
   const sam = contact({
@@ -173,6 +181,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "Send me the address and I’ll be there.",
       "Sounds great.",
     ],
+    interests: ["body", "court", "trail", "parking"],
   })
 
   const drPatel = contact({
@@ -189,6 +198,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       "We can hold the Friday slot if that helps.",
       "Confirmed.",
     ],
+    interests: ["work"],
   })
 
   const contacts: Contact[] = [
@@ -239,6 +249,60 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
       archived: false,
       unread: 3,
       typingContactId: null,
+      topic: "body",
+      blurb: "Weekend games, rotating snacks, no excuses.",
+    },
+    {
+      id: "chat-palette",
+      kind: "group",
+      title: "Palette desk",
+      participantIds: [YOU_ID, maya.id, aisha.id],
+      pinned: false,
+      muted: false,
+      archived: false,
+      unread: 1,
+      typingContactId: null,
+      topic: "craft",
+      blurb: "The kit lives here — mocks, badges, and the quieter green.",
+    },
+    {
+      id: "chat-trail",
+      kind: "group",
+      title: "Trail notes",
+      participantIds: [YOU_ID, jordan.id, sam.id],
+      pinned: false,
+      muted: false,
+      archived: false,
+      unread: 0,
+      typingContactId: null,
+      topic: "body",
+      blurb: "Dawn starts, rude wind, extra layers in the car.",
+    },
+    {
+      id: "chat-sunday",
+      kind: "group",
+      title: "Family Sunday",
+      participantIds: [YOU_ID, priya.id, noah.id],
+      pinned: false,
+      muted: false,
+      archived: false,
+      unread: 0,
+      typingContactId: null,
+      topic: "kin",
+      blurb: "Dad already bought too much. Come early and bring citrus.",
+    },
+    {
+      id: "chat-studio",
+      kind: "group",
+      title: "Studio cut",
+      participantIds: [YOU_ID, luca.id, elena.id],
+      pinned: false,
+      muted: false,
+      archived: false,
+      unread: 2,
+      typingContactId: null,
+      topic: "work",
+      blurb: "Title cards, invoices, and the briefing that keeps moving.",
     },
     {
       id: "chat-priya",
@@ -322,6 +386,22 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     m("m15", "chat-volleyball", jordan.id, "If nobody claims snacks I’m grabbing oranges.", hours(2), "delivered"),
     m("m16", "chat-volleyball", sam.id, "Wait we moved it to the lakeside courts, right?", minutes(22), "delivered"),
     m("m17", "chat-volleyball", aisha.id, "Yes. Same time, new nets. Wear something you can slide in.", minutes(16), "delivered"),
+
+    m("m36", "chat-palette", maya.id, "Can we keep the mock in this room instead of DMs?", hours(8), "read"),
+    m("m37", "chat-palette", YOU_ID, "Yes. Palette lives here.", hours(7.6), "read"),
+    m("m38", "chat-palette", aisha.id, "I’ll drop the badge fixture once Maya ships spacing.", minutes(28), "delivered"),
+
+    m("m39", "chat-trail", jordan.id, "Wind advisory for Saturday. Extra layer in the car.", hours(11), "read"),
+    m("m40", "chat-trail", YOU_ID, "Stove still coming?", hours(10.5), "read"),
+    m("m41", "chat-trail", sam.id, "I can meet at the lower lot if parking is full.", hours(3), "read"),
+
+    m("m42", "chat-sunday", priya.id, "Dad bought too much again. Come early.", days(1), "read"),
+    m("m43", "chat-sunday", YOU_ID, "Citrus salad and limes.", hours(22), "read"),
+    m("m44", "chat-sunday", noah.id, "I’ll bring sparkling water. Priya already claimed me.", hours(16), "read"),
+
+    m("m45", "chat-studio", luca.id, "Title card still eight frames short.", hours(12), "delivered"),
+    m("m46", "chat-studio", YOU_ID, "I’ll put the export in this room this afternoon.", hours(11.4), "read"),
+    m("m47", "chat-studio", elena.id, "Board overran. Can the briefing live here instead of a separate thread?", minutes(70), "delivered"),
 
     m("m18", "chat-priya", priya.id, "Sunday lunch is at 1. Dad already bought too much.", days(2), "read"),
     m("m19", "chat-priya", YOU_ID, "I’ll bring the citrus salad. Need anything from the store?", days(2) + 3_600_000, "read"),

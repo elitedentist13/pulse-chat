@@ -13,7 +13,7 @@ import {
 import { createSeedSnapshot } from "@/lib/seed"
 import type { Chat, Contact, Message, MessengerSnapshot, StatusUpdate } from "@/lib/types"
 
-const STORAGE_KEY = "kith-messenger-v1"
+const STORAGE_KEY = "kith-messenger-v3"
 
 type ChatFilter = "all" | "unread" | "groups"
 
@@ -259,6 +259,36 @@ function reducer(state: MessengerState, action: Action): MessengerState {
   }
 }
 
+function pickResponder(
+  chat: Chat,
+  incoming: string,
+  contacts: Contact[],
+  youId: string
+) {
+  const others = chat.participantIds
+    .filter((id) => id !== youId)
+    .map((id) => contacts.find((contact) => contact.id === id))
+    .filter((contact): contact is Contact => Boolean(contact))
+  if (others.length === 0) return undefined
+  if (chat.kind !== "group" || others.length === 1) {
+    return others[Math.floor(Math.random() * others.length)]
+  }
+
+  const text = incoming.toLowerCase()
+  const ranked = others
+    .map((contact) => {
+      let score = Math.random()
+      if (chat.topic && contact.interests.includes(chat.topic)) score += 2
+      for (const interest of contact.interests) {
+        if (text.includes(interest)) score += 4
+      }
+      return { contact, score }
+    })
+    .sort((a, b) => b.score - a.score)
+
+  return ranked[0]?.contact ?? others[0]
+}
+
 function pickReply(contact: Contact, incoming: string) {
   const text = incoming.toLowerCase()
   if (text.includes("thank")) return "Anytime."
@@ -398,7 +428,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       .filter((chat) => {
         if (state.chatFilter === "unread") return chat.unread > 0
         if (state.chatFilter === "groups") return chat.kind === "group"
-        return true
+        return chat.kind === "direct"
       })
       .filter((chat) => {
         if (!query) return true
@@ -406,7 +436,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
         const participants = chat.participantIds
           .map((id) => contactById(id)?.name ?? "")
           .join(" ")
-        return `${chat.title} ${preview} ${participants}`
+        return `${chat.title} ${chat.blurb ?? ""} ${chat.topic ?? ""} ${preview} ${participants}`
           .toLowerCase()
           .includes(query)
       })
@@ -454,10 +484,12 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
 
       const chat = current.chats.find((item) => item.id === chatId)
       if (!chat) return
-      const otherIds = chat.participantIds.filter((item) => item !== current.youId)
-      const responderId =
-        otherIds[Math.floor(Math.random() * Math.max(otherIds.length, 1))]
-      const responder = current.contacts.find((item) => item.id === responderId)
+      const responder = pickResponder(
+        chat,
+        trimmed,
+        current.contacts,
+        current.youId
+      )
       if (!responder) return
 
       const typingAt = 900 + Math.random() * 1100

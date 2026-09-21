@@ -4,6 +4,8 @@ import { ReceiptMark } from "@/components/messenger/message-ticks"
 import { UserAvatar } from "@/components/messenger/user-avatar"
 import { formatClock, formatDateSeparator, sameDay } from "@/lib/format"
 import { useMessenger } from "@/lib/messenger-store"
+import { topicMeta } from "@/lib/topics"
+import type { Chat, Contact } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useEffect, useRef } from "react"
 
@@ -15,6 +17,12 @@ export function MessageThread({ chatId }: { chatId: string }) {
   const typingContact = chat?.typingContactId
     ? contactById(chat.typingContactId)
     : undefined
+  const members =
+    chat?.kind === "group"
+      ? chat.participantIds
+          .map((id) => contactById(id))
+          .filter((person): person is Contact => Boolean(person))
+      : []
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" })
@@ -23,6 +31,11 @@ export function MessageThread({ chatId }: { chatId: string }) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+        {chat?.kind === "group" ? (
+          <div className="mb-8 w-full max-w-md">
+            <RoomIntro chat={chat} members={members} youId={you.id} />
+          </div>
+        ) : null}
         <p className="font-heading text-2xl">The table is empty.</p>
         <p className="mt-2 max-w-sm text-sm text-[#6e6458]">
           Write the first line. They’ll answer from the other chair.
@@ -34,6 +47,9 @@ export function MessageThread({ chatId }: { chatId: string }) {
   return (
     <div className="min-h-0 w-full flex-1 overflow-y-auto px-4 py-6 md:px-10">
       <div className="mx-auto max-w-2xl">
+        {chat?.kind === "group" ? (
+          <RoomIntro chat={chat} members={members} youId={you.id} />
+        ) : null}
         {messages.map((message, index) => {
           const previous = messages[index - 1]
           const showDate = !previous || !sameDay(previous.sentAt, message.sentAt)
@@ -113,5 +129,52 @@ export function MessageThread({ chatId }: { chatId: string }) {
         <div ref={bottomRef} />
       </div>
     </div>
+  )
+}
+
+function RoomIntro({
+  chat,
+  members,
+  youId,
+}: {
+  chat: Chat
+  members: Contact[]
+  youId: string
+}) {
+  const room = topicMeta(chat.topic)
+  const others = members.filter((person) => person.id !== youId)
+
+  return (
+    <aside
+      data-room-intro={chat.id}
+      className="mb-8 rounded-[1.6rem] border border-[#e0d6c8] bg-[#fbf7f0] px-5 py-4"
+    >
+      <p
+        className="text-[10px] tracking-[0.2em] uppercase"
+        style={{ color: room.ink }}
+      >
+        {room.label}
+      </p>
+      <p className="mt-1 font-heading text-xl leading-tight">{chat.title}</p>
+      <p className="mt-2 text-[15px] leading-6 text-[#6e6458]">
+        {chat.blurb ?? room.line}
+      </p>
+      <div className="mt-3 flex items-center gap-2">
+        <span className="flex -space-x-1.5">
+          {others.slice(0, 5).map((person) => (
+            <UserAvatar
+              key={person.id}
+              contact={person}
+              size="sm"
+              className="ring-2 ring-[#fbf7f0]"
+            />
+          ))}
+        </span>
+        <p className="min-w-0 truncate text-xs text-[#6e6458]">
+          {others.map((person) => person.name.split(" ")[0]).join(" · ")}
+          {others.length ? " · You" : "You"}
+        </p>
+      </div>
+    </aside>
   )
 }

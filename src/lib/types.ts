@@ -1,5 +1,7 @@
 export type MessageStatus = "sending" | "sent" | "delivered" | "read"
 
+export type RoomTopic = "craft" | "body" | "kin" | "work"
+
 export type Contact = {
   id: string
   name: string
@@ -10,6 +12,7 @@ export type Contact = {
   online: boolean
   lastSeen: number
   replyBank: string[]
+  interests: string[]
 }
 
 export type ChatKind = "direct" | "group"
@@ -25,6 +28,8 @@ export type Chat = {
   archived: boolean
   unread: number
   typingContactId: string | null
+  topic?: RoomTopic
+  blurb?: string
 }
 
 export type Message = {

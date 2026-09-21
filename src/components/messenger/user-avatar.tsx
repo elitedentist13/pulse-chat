@@ -1,5 +1,6 @@
+import { topicMeta } from "@/lib/topics"
 import { cn } from "@/lib/utils"
-import type { Contact } from "@/lib/types"
+import type { Contact, RoomTopic } from "@/lib/types"
 
 type Size = "sm" | "md" | "lg" | "xl"
 
@@ -46,18 +47,23 @@ export function GroupAvatar({
   title,
   size = "md",
   className,
+  topic,
 }: {
   title: string
   size?: Size
   className?: string
+  topic?: RoomTopic
 }) {
+  const ink = topic ? topicMeta(topic).ink : "#2c3d6b"
+
   return (
     <div
       className={cn(
-        "flex items-center justify-center bg-[#2c3d6b] font-heading font-medium text-[#f6f1e8]",
+        "flex items-center justify-center font-heading font-medium text-[#f6f1e8]",
         sizes[size],
         className
       )}
+      style={{ background: ink }}
       aria-hidden
     >
       {title

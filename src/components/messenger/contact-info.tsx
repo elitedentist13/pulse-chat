@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet"
 import { formatLastSeen } from "@/lib/format"
 import { useMessenger } from "@/lib/messenger-store"
+import { topicMeta } from "@/lib/topics"
 import { BellOff, Pin, Trash2 } from "lucide-react"
 
 export function ContactInfo({
@@ -32,6 +33,7 @@ export function ContactInfo({
   const members = chat.participantIds
     .map((id) => contactById(id))
     .filter(Boolean)
+  const room = chat.kind === "group" ? topicMeta(chat.topic) : null
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -40,23 +42,27 @@ export function ContactInfo({
           {direct ? (
             <UserAvatar contact={direct} size="xl" />
           ) : (
-            <GroupAvatar title={chat.title} size="xl" />
+            <GroupAvatar title={chat.title} size="xl" topic={chat.topic} />
           )}
           <SheetHeader className="items-center p-0 pt-4">
             <SheetTitle className="font-heading text-2xl">{chat.title}</SheetTitle>
             <SheetDescription>
               {direct
                 ? direct.phone
-                : `Room · ${chat.participantIds.length} people`}
+                : `${room?.label ?? "Room"} · ${chat.participantIds.length} people`}
             </SheetDescription>
           </SheetHeader>
         </div>
         <div className="space-y-1 px-5 py-4">
           <p className="text-sm text-[#6e6458]">
-            {direct ? formatLastSeen(direct) : "A standing Saturday."}
+            {direct
+              ? formatLastSeen(direct)
+              : room
+                ? room.line
+                : "A standing room."}
           </p>
           <p className="text-[15px] leading-6">
-            {direct?.about ?? "Weekend games, rotating snacks, no excuses."}
+            {direct?.about ?? chat.blurb ?? "A standing Saturday."}
           </p>
         </div>
         <Separator />
