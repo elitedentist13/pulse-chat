@@ -13,6 +13,13 @@ npm run dev -- --port 43217
 
 Then open [http://localhost:43217](http://localhost:43217).
 
+For a production build:
+
+```bash
+npm run build
+npm start
+```
+
 ## What you can do
 
 - Browse seeded chats (Maya, Jordan, Saturday Volleyball, and more)

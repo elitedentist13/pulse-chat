@@ -30,7 +30,7 @@ function contact(
   return { ...partial, initials }
 }
 
-export function createSeedSnapshot(now = Date.now()): MessengerSnapshot {
+export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z")): MessengerSnapshot {
   const minutes = (n: number) => now - n * 60_000
   const hours = (n: number) => now - n * 3_600_000
   const days = (n: number) => now - n * 86_400_000

@@ -64,10 +64,11 @@ export function MessageThread({ chatId }: { chatId: string }) {
                 type="button"
                 onDoubleClick={() => reactToMessage(message.id)}
                 className={cn(
-                  "relative max-w-[85%] rounded-lg px-2.5 py-1.5 text-left text-[14.5px] leading-5 text-[#e9edef] shadow-sm md:max-w-[65%]",
+                  "relative max-w-[85%] rounded-lg px-2.5 pt-1.5 pb-1 text-left text-[14.5px] leading-5 text-[#e9edef] shadow-sm md:max-w-[65%]",
                   fromMe
                     ? "rounded-tr-none bg-[#005c4b]"
-                    : "rounded-tl-none bg-[#202c33]"
+                    : "rounded-tl-none bg-[#202c33]",
+                  message.reaction && "mb-3"
                 )}
               >
                 {isGroup && showSender && sender ? (
@@ -81,7 +82,7 @@ export function MessageThread({ chatId }: { chatId: string }) {
                 <span className="whitespace-pre-wrap break-words">
                   {message.text}
                 </span>
-                <span className="mt-1 ml-2 inline-flex translate-y-0.5 items-center gap-1 float-right text-[11px] text-[#ffffff99]">
+                <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-[#ffffff99]">
                   {formatClock(message.sentAt)}
                   {fromMe ? <MessageTicks status={message.status} /> : null}
                 </span>

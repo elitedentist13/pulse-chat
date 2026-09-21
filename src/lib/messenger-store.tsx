@@ -346,11 +346,13 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(raw) as MessengerSnapshot
           if (parsed?.contacts && parsed?.chats && parsed?.messages) {
             dispatch({ type: "replace", snapshot: parsed })
+            return
           }
         }
       } catch {
-        // Keep the seeded demo if storage is missing or corrupt.
+        // Keep going and seed from the current clock.
       }
+      dispatch({ type: "replace", snapshot: createSeedSnapshot(Date.now()) })
       return
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable(state)))
@@ -502,7 +504,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => {
     clearTimers()
     window.localStorage.removeItem(STORAGE_KEY)
-    dispatch({ type: "replace", snapshot: createSeedSnapshot() })
+    dispatch({ type: "replace", snapshot: createSeedSnapshot(Date.now()) })
     dispatch({ type: "select-chat", chatId: null })
     dispatch({ type: "set-list-mode", mode: "chats" })
     dispatch({ type: "set-search", search: "" })
