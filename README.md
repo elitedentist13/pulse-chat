@@ -6,7 +6,7 @@ Each companion has a **profile** — name, nickname, date of birth, origin, trai
 
 Clips stay short: **15 seconds** and **8 MB**. They sit in the same three slots as photos. The booklet uses a still from the clip.
 
-**Care** keeps vet visits, blood tests, receipts, prescriptions (with photos or short clips), grooming dates, food changes, favourite snacks and canned food, and tick / heartworm reminders (usually every three months). **Talent** is the list of what they can do: stand, give a hand, make a sound.
+**Care** is split into subtabs. Visits, blood, receipts, prescriptions, grooming, and food each keep a strip of photos and short clips — date and caption on every slip, add or delete freely. Preventatives and the bowl sit on their own tabs. **Talent** is the list of what they can do: stand, give a hand, make a sound.
 
 The chrome is in **English**, **Traditional Chinese**, and **Simplified Chinese**. Switch with EN / 繁 / 简. Pages you write stay in the language you wrote them.
 

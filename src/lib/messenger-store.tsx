@@ -609,6 +609,7 @@ type MessengerContextValue = {
   talentsFor: (petId: string) => Talent[]
   saveCare: (record: Omit<CareRecord, "id"> & { id?: string }) => void
   deleteCare: (recordId: string) => void
+  removeCareMedia: (recordId: string, mediaId: string) => void
   saveReminder: (
     reminder: Omit<PreventativeReminder, "id"> & { id?: string }
   ) => void
@@ -1133,6 +1134,25 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
         )
       }
       dispatch({ type: "delete-care", recordId })
+    },
+    removeCareMedia: (recordId, mediaId) => {
+      const record = stateRef.current.careRecords.find((item) => item.id === recordId)
+      if (!record) return
+      const dropped = record.attachments.find((item) => item.id === mediaId)
+      const next = record.attachments.filter((item) => item.id !== mediaId)
+      if (dropped) {
+        void import("@/lib/media-db").then(({ purgeMediaBlobs }) =>
+          purgeMediaBlobs([dropped])
+        )
+      }
+      if (next.length === 0) {
+        dispatch({ type: "delete-care", recordId })
+        return
+      }
+      dispatch({
+        type: "upsert-care",
+        record: { ...record, attachments: next },
+      })
     },
     saveReminder,
     deleteReminder: (reminderId) =>
