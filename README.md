@@ -12,7 +12,7 @@ Clips stay short: **15 seconds** and **8 MB**. They sit in the same three slots 
 
 The chrome is in **English**, **Traditional Chinese**, and **Simplified Chinese**. Switch with EN / 繁 / 简. Pages you write stay in the language you wrote them.
 
-Public pages can sit on the **porch**, shuffled so they arrive as neighbors, not a feed. Private pages stay in the drawer. From a porch page you can write to the keeper, or carry the page into **notes** — the side table, now an adjunct.
+Public pages can sit on the **porch**, shuffled so they arrive as neighbors, not a feed. Private pages stay in the drawer. From a porch page you can write to the keeper, or carry the page into **notes** — the old Kith table, now an adjunct.
 
 ## Run locally
 
