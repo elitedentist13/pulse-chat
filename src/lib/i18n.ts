@@ -28,7 +28,7 @@ export function guessLocale(language = ""): Locale {
 }
 
 const en = {
-  appName: "Pulse Chat",
+  appName: "Kith",
   navDaybook: "Daybook",
   navPorch: "Porch",
   navNotes: "Notes",
@@ -343,7 +343,7 @@ const en = {
   privacyHint: "Each line can be shown or hidden from other chairs at the table.",
   memberAboutReal: "Legal name on the slip: {name}",
   memberAboutHidden: "Available. Legal name is hidden.",
-  gateTitle: "Pulse Chat",
+  gateTitle: "Kith",
   gateBlurb: "Sign in or create a membership. The daybook opens after you are on the roll.",
   gateLogin: "Sign in",
   gateCreate: "Create membership",
@@ -374,7 +374,7 @@ const en = {
 } as const
 
 const zhHant: Record<keyof typeof en, string> = {
-  appName: "Pulse Chat",
+  appName: "Kith",
   navDaybook: "日記本",
   navPorch: "門廊",
   navNotes: "便箋",
@@ -684,7 +684,7 @@ const zhHant: Record<keyof typeof en, string> = {
   privacyHint: "每一行都可以對桌上其他人顯示或隱藏。",
   memberAboutReal: "紙條上的法定姓名：{name}",
   memberAboutHidden: "在線。法定姓名已隱藏。",
-  gateTitle: "Pulse Chat",
+  gateTitle: "Kith",
   gateBlurb: "登入或建立會籍。入冊之後才打開日記本。",
   gateLogin: "登入",
   gateCreate: "建立會籍",
@@ -715,7 +715,7 @@ const zhHant: Record<keyof typeof en, string> = {
 }
 
 const zhHans: Record<keyof typeof en, string> = {
-  appName: "Pulse Chat",
+  appName: "Kith",
   navDaybook: "日记本",
   navPorch: "门廊",
   navNotes: "便笺",
@@ -1025,7 +1025,7 @@ const zhHans: Record<keyof typeof en, string> = {
   privacyHint: "每一行都可以对桌上其他人显示或隐藏。",
   memberAboutReal: "纸条上的法定姓名：{name}",
   memberAboutHidden: "在线。法定姓名已隐藏。",
-  gateTitle: "Pulse Chat",
+  gateTitle: "Kith",
   gateBlurb: "登录或建立会籍。入册之后才打开日记本。",
   gateLogin: "登录",
   gateCreate: "建立会籍",

@@ -1,4 +1,4 @@
-# Pulse Chat
+# Kith
 
 A membership first. Then a pet daybook. Notes second.
 
