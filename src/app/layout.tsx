@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kith",
+  title: "Pulse Chat",
   description:
-    "A pet daybook: profiles, 365-day pages, stories that close into a memorial booklet, and a porch for public shares.",
+    "Pulse Chat — a pet daybook: profiles, 365-day pages, stories that close into a memorial booklet, and a porch for public shares.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

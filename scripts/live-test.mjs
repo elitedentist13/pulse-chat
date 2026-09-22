@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Live smoke / spot / API / CDP Runtime.evaluate / client tests
- * against the Kith server on 43217.
+ * against the Pulse Chat server on 43217.
  */
 import { createRequire } from "node:module"
 import { writeFileSync } from "node:fs"
@@ -37,11 +37,11 @@ async function api(path, expect = 200) {
 }
 
 async function main() {
-  console.log(`\nKith live tests → ${BASE}\n`)
+  console.log(`\nPulse Chat live tests → ${BASE}\n`)
 
   const home = await api("/")
   record("api", "GET / is 200", home.ok, `${home.status} in ${home.ms}ms`)
-  record("api", "GET / is HTML", home.text.includes("<!DOCTYPE html>") && home.text.includes("Kith"))
+  record("api", "GET / is HTML", home.text.includes("<!DOCTYPE html>") && home.text.includes("Pulse Chat"))
   record(
     "api",
     "GET / content-type html",
@@ -166,7 +166,7 @@ async function main() {
   record("cdp", "dataset.kith === ready", runtime.ready === "ready", String(runtime.ready))
   record("cdp", "join opens the notes account", runtime.surface === "notes", String(runtime.surface))
   record("cdp", "default pet tab is pages", runtime.petTab === "pages", String(runtime.petTab))
-  record("cdp", "document title is Kith", runtime.title === "Kith")
+  record("cdp", "document title is Pulse Chat", runtime.title === "Pulse Chat")
   record("client", "membership notes account is open", Boolean(await page.$("[data-hall], [data-app-nav]")))
   await tap("[data-surface-tab='daybook']")
   await page.waitForFunction(() => document.documentElement.dataset.surface === "daybook")

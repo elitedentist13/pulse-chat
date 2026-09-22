@@ -46,7 +46,7 @@ export function YardSpine({ className }: { className?: string }) {
       <header className="px-5 pt-6 pb-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="font-heading text-3xl leading-none tracking-tight">Kith</p>
+            <p className="font-heading text-3xl leading-none tracking-tight">{t("appName")}</p>
             <p className="mt-1 text-sm text-[#6e6458]">
               {activePet
                 ? t("daybookOf", { name: activePet.name })
