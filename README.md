@@ -1,6 +1,8 @@
 # Kith
 
-A pet daybook first. Notes second.
+A membership first. Then a pet daybook. Notes second.
+
+The first screen is **Sign in** or **Create membership**. A new slip asks for real name, display name, phone, and date of birth. Each line can be **shown** or **hidden** from other chairs at the table. Creating a membership also opens a Notes account with the desk, so the slip is filed inside the app.
 
 Each companion has a **profile** — name, nickname, date of birth, origin, traits, features, favourite food, fears, special notes, remarks, and medical remarks — plus a year of pages: text, photos, and short videos, any day, 365 around. A **story** has a first day and an end date. You write until that last day, close it, and export a memorial booklet as a PDF.
 
@@ -38,6 +40,8 @@ That run covers HTTP/API status checks, CDP `Runtime.evaluate` against the live 
 
 ## What you can do
 
+- Sign in or create a membership (real name, display name, phone, date of birth)
+- Hide or show each of those fields from others, then change it later from the Notes account
 - Open Juniper’s daybook and write any day of the year
 - Click a portrait to change the picture
 - Fill the profile: traits, features, origin, fears, food, medical remarks

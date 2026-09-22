@@ -40,6 +40,7 @@ export function ChatList({ className }: { className?: string }) {
     statuses,
     contactById,
     resetDemo,
+    signOut,
     viewStatus,
   } = useMessenger()
   const { t } = useLocale()
@@ -92,7 +93,11 @@ export function ChatList({ className }: { className?: string }) {
               {t("notes")}
             </p>
             <p className="mt-1 text-sm text-[#6e6458]">
-              {state.chatFilter === "groups" ? t("hallBlurb") : t("notesBlurb")}
+              {state.member
+                ? t("signedAs", { name: state.member.displayName })
+                : state.chatFilter === "groups"
+                  ? t("hallBlurb")
+                  : t("notesBlurb")}
             </p>
           </div>
         )}
@@ -128,6 +133,7 @@ export function ChatList({ className }: { className?: string }) {
                 {t("filedAway")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>{t("signOut")}</DropdownMenuItem>
               <DropdownMenuItem onClick={resetDemo}>
                 <RotateCcw className="size-4" />
                 {t("resetTable")}

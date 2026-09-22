@@ -2,6 +2,23 @@ export type MessageStatus = "sending" | "sent" | "delivered" | "read"
 
 export type RoomTopic = "craft" | "body" | "kin" | "work"
 
+export type MemberShow = {
+  realName: boolean
+  displayName: boolean
+  phone: boolean
+  dob: boolean
+}
+
+export type Member = {
+  id: string
+  realName: string
+  displayName: string
+  phone: string
+  dob: string
+  joinedAt: number
+  show: MemberShow
+}
+
 export type Contact = {
   id: string
   name: string
@@ -13,6 +30,7 @@ export type Contact = {
   lastSeen: number
   replyBank: string[]
   interests: string[]
+  dob?: string
 }
 
 export type ChatKind = "direct" | "group"
@@ -156,6 +174,7 @@ export type AppSurface = "daybook" | "porch" | "notes"
 
 export type MessengerSnapshot = {
   youId: string
+  member: Member | null
   contacts: Contact[]
   chats: Chat[]
   messages: Message[]

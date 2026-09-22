@@ -110,8 +110,45 @@ async function main() {
   await page.evaluate(() => {
     localStorage.removeItem("kith-daybook-v3")
     localStorage.removeItem("kith-locale")
+    localStorage.removeItem("kith-members-v1")
   })
   await page.reload({ waitUntil: "networkidle0" })
+  await page.waitForFunction(() => document.documentElement.dataset.kith === "joining")
+
+  record(
+    "smoke",
+    "first page is login or create membership",
+    await page.$eval("[data-membership-gate]", (el) =>
+      /Sign in/.test(el.innerText) && /Create membership/.test(el.innerText)
+    )
+  )
+
+  await step("client", "create membership with real and display names", async () => {
+    await tap("[data-gate-tab='create']")
+    await page.waitForFunction(
+      () => document.querySelector("[data-membership-gate]")?.getAttribute("data-gate-mode") === "create"
+    )
+    await page.evaluate(() => {
+      const fill = (name, value) => {
+        const node = document.querySelector(`[data-member-field='${name}']`)
+        if (!(node instanceof HTMLInputElement)) return
+        const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")
+        proto?.set?.call(node, value)
+        node.dispatchEvent(new Event("input", { bubbles: true }))
+        node.dispatchEvent(new Event("change", { bubbles: true }))
+      }
+      fill("realName", "Jordan Hale")
+      fill("displayName", "Jordan")
+      fill("phone", "4155550100")
+      fill("dob", "1990-04-12")
+    })
+    await tap("[data-privacy-show='realName']")
+    await tap("[data-gate-submit]")
+    await page.waitForFunction(() => document.documentElement.dataset.kith === "ready", {
+      timeout: 8000,
+    })
+  })
+
   await page.waitForFunction(() => document.documentElement.dataset.kith === "ready")
 
   const runtime = await evaluate(`({
@@ -127,10 +164,13 @@ async function main() {
   })`)
   record("cdp", "Runtime.evaluate returns object", Boolean(runtime))
   record("cdp", "dataset.kith === ready", runtime.ready === "ready", String(runtime.ready))
-  record("cdp", "default surface is daybook", runtime.surface === "daybook", String(runtime.surface))
+  record("cdp", "join opens the notes account", runtime.surface === "notes", String(runtime.surface))
   record("cdp", "default pet tab is pages", runtime.petTab === "pages", String(runtime.petTab))
   record("cdp", "document title is Kith", runtime.title === "Kith")
-  record("cdp", "spine and day page mounted", runtime.spine && runtime.day)
+  record("client", "membership notes account is open", Boolean(await page.$("[data-hall], [data-app-nav]")))
+  await tap("[data-surface-tab='daybook']")
+  await page.waitForFunction(() => document.documentElement.dataset.surface === "daybook")
+  record("cdp", "spine and day page mounted", Boolean(await page.$("[data-yard-spine]")) && Boolean(await page.$("[data-day-page]")))
   record("cdp", "localStorage snapshot written", runtime.storage)
   record("cdp", "location is live origin", String(runtime.href).startsWith(BASE))
 

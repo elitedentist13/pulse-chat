@@ -204,8 +204,26 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
     interests: ["work"],
   })
 
+  const desk = contact({
+    id: "desk",
+    name: "The desk",
+    phone: "",
+    about: "Membership slips live here.",
+    color: colors.slate,
+    online: true,
+    lastSeen: now,
+    replyBank: [
+      "You’re on the roll.",
+      "The slip is filed. Write if a number or a birthday should change.",
+      "This is your notes account. The daybook is still the house.",
+    ],
+    initials: "TD",
+    interests: ["member", "desk", "note", "account"],
+  })
+
   const contacts: Contact[] = [
     you,
+    desk,
     maya,
     jordan,
     priya,
@@ -485,6 +503,7 @@ export function createSeedSnapshot(now = Date.parse("2026-09-21T16:00:00.000Z"))
   const yard = createYardSeed(now)
   return {
     youId: YOU_ID,
+    member: null,
     contacts,
     chats,
     messages,

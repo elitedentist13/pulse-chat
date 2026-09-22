@@ -28,6 +28,7 @@ export function YardSpine({ className }: { className?: string }) {
     setPetTab,
     changePortrait,
     resetDemo,
+    signOut,
   } = useMessenger()
   const { t, tag } = useLocale()
   const [newPet, setNewPet] = useState(false)
@@ -52,9 +53,14 @@ export function YardSpine({ className }: { className?: string }) {
                 : t("yardOf", { name: you.name })}
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={resetDemo}>
-            {t("reset")}
-          </Button>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={signOut}>
+              {t("signOut")}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetDemo}>
+              {t("reset")}
+            </Button>
+          </div>
         </div>
         <AppNav className="mt-4" />
       </header>

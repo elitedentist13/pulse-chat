@@ -10,8 +10,21 @@ import {
   useRef,
   type ReactNode,
 } from "react"
-import { inDateRange, toDateKey } from "@/lib/dates"
+import { formatDiaryDate, inDateRange, toDateKey } from "@/lib/dates"
+import { isLocale, localeTag, LOCALE_STORAGE_KEY, translate } from "@/lib/i18n"
 import { createSeedSnapshot } from "@/lib/seed"
+import {
+  DESK_ID,
+  MEMBER_CHAT_ID,
+  findMember,
+  isUsableDob,
+  isUsablePhone,
+  memberInitials,
+  normalizeMember,
+  readRoster,
+  sameMember,
+  writeRoster,
+} from "@/lib/member"
 import type {
   AppSurface,
   CareRecord,
@@ -19,6 +32,7 @@ import type {
   Contact,
   DiaryEntry,
   DiaryPhoto,
+  Member,
   Message,
   MessengerSnapshot,
   Pet,
@@ -46,6 +60,8 @@ type MessengerState = MessengerSnapshot & {
   yardFocus: "index" | "page"
   porchSeed: number
   petTab: PetTab
+  hydrated: boolean
+  roster: Member[]
 }
 
 type Action =
@@ -85,11 +101,58 @@ type Action =
   | { type: "delete-reminder"; reminderId: string }
   | { type: "upsert-talent"; talent: Talent }
   | { type: "delete-talent"; talentId: string }
+  | {
+      type: "register-member"
+      member: Member
+      deskName: string
+      chatTitle: string
+      welcome: string
+      slip: string
+      publicName: string
+      publicPhone: string
+      publicDob: string
+      publicAbout: string
+    }
+  | {
+      type: "login-member"
+      member: Member
+      deskName: string
+      chatTitle: string
+      welcome: string
+      slip: string
+      publicName: string
+      publicPhone: string
+      publicDob: string
+      publicAbout: string
+    }
+  | {
+      type: "update-member"
+      member: Member
+      deskName: string
+      chatTitle: string
+      welcome: string
+      slip: string
+      publicName: string
+      publicPhone: string
+      publicDob: string
+      publicAbout: string
+    }
+  | { type: "sign-out" }
+  | { type: "set-roster"; roster: Member[] }
 
 function hydrate(snapshot: MessengerSnapshot): MessengerSnapshot {
   const seed = createSeedSnapshot()
+  const rawMember = snapshot.member as (Member & { name?: string }) | null
+  const member =
+    rawMember &&
+    (rawMember.displayName?.trim() || rawMember.realName?.trim() || rawMember.name?.trim()) &&
+    rawMember.phone?.trim() &&
+    rawMember.dob
+      ? normalizeMember(rawMember)
+      : null
   return {
     youId: snapshot.youId,
+    member,
     contacts: snapshot.contacts.map((item) => ({ ...item })),
     chats: snapshot.chats.map((item) => ({ ...item, typingContactId: null })),
     messages: snapshot.messages.map((item) => ({ ...item })),
@@ -153,12 +216,15 @@ function emptyUi(snapshot: MessengerSnapshot, now = Date.now()): Omit<
     yardFocus: "index",
     porchSeed: now,
     petTab: "pages",
+    hydrated: false,
+    roster: [],
   }
 }
 
 function createInitialState(): MessengerState {
   const snapshot = hydrate(createSeedSnapshot())
-  return { ...snapshot, ...emptyUi(snapshot) }
+  const roster = typeof window !== "undefined" ? readRoster() : []
+  return { ...snapshot, ...emptyUi(snapshot), roster }
 }
 
 function lastMessageTime(state: MessengerState, chatId: string) {
@@ -177,10 +243,141 @@ function nid(prefix: string) {
     : `${prefix}-${Date.now()}`
 }
 
+function applyMembership(
+  state: MessengerState,
+  member: Member,
+  copy: {
+    deskName: string
+    chatTitle: string
+    welcome: string
+    slip: string
+    publicName: string
+    publicPhone: string
+    publicDob: string
+    publicAbout: string
+  }
+): MessengerState {
+  const initials = memberInitials(copy.publicName) || "ME"
+  let contacts = state.contacts.map((item) =>
+    item.id === state.youId
+      ? {
+          ...item,
+          name: copy.publicName,
+          phone: copy.publicPhone,
+          dob: copy.publicDob || undefined,
+          initials,
+          about: copy.publicAbout,
+          online: true,
+          lastSeen: Date.now(),
+        }
+      : item.id === DESK_ID
+        ? { ...item, name: copy.deskName }
+        : item
+  )
+  if (!contacts.some((item) => item.id === DESK_ID)) {
+    contacts = [
+      ...contacts,
+      {
+        id: DESK_ID,
+        name: copy.deskName,
+        phone: "",
+        about: "Membership slips live here.",
+        initials: "TD",
+        color: "#4d6a7a",
+        online: true,
+        lastSeen: Date.now(),
+        replyBank: ["You’re on the roll."],
+        interests: ["member", "desk", "note", "account"],
+      },
+    ]
+  }
+  const existingChat = state.chats.find((chat) => chat.id === MEMBER_CHAT_ID)
+  const chat: Chat = existingChat
+    ? {
+        ...existingChat,
+        title: copy.chatTitle,
+        contactId: DESK_ID,
+        archived: false,
+        pinned: true,
+        unread: 0,
+      }
+    : {
+        id: MEMBER_CHAT_ID,
+        kind: "direct",
+        title: copy.chatTitle,
+        contactId: DESK_ID,
+        participantIds: [state.youId, DESK_ID],
+        pinned: true,
+        muted: false,
+        archived: false,
+        unread: 0,
+        typingContactId: null,
+      }
+  const chats = existingChat
+    ? state.chats.map((item) => (item.id === MEMBER_CHAT_ID ? chat : item))
+    : [chat, ...state.chats]
+  const welcome: Message = {
+    id: nid("member-hello"),
+    chatId: MEMBER_CHAT_ID,
+    senderId: DESK_ID,
+    text: copy.welcome,
+    sentAt: Date.now(),
+    status: "read",
+  }
+  const slip: Message = {
+    id: nid("member-slip"),
+    chatId: MEMBER_CHAT_ID,
+    senderId: DESK_ID,
+    text: copy.slip,
+    sentAt: Date.now() + 1,
+    status: "read",
+  }
+  return {
+    ...state,
+    member,
+    contacts,
+    chats,
+    messages: [
+      ...state.messages.filter((item) => item.chatId !== MEMBER_CHAT_ID),
+      welcome,
+      slip,
+    ],
+    listMode: "chats",
+    chatFilter: "all",
+  }
+}
+
 function reducer(state: MessengerState, action: Action): MessengerState {
   switch (action.type) {
     case "replace":
-      return { ...state, ...hydrate(action.snapshot) }
+      return { ...state, ...hydrate(action.snapshot), hydrated: true }
+    case "set-roster":
+      return { ...state, roster: action.roster }
+    case "sign-out":
+      return {
+        ...state,
+        member: null,
+        activeChatId: null,
+      }
+    case "register-member":
+    case "login-member":
+    case "update-member": {
+      const member = normalizeMember(action.member)
+      const roster = [
+        ...state.roster.filter((item) => !sameMember(item, member)),
+        member,
+      ]
+      const opened = applyMembership(state, member, action)
+      if (action.type === "update-member") {
+        return { ...opened, roster }
+      }
+      return {
+        ...opened,
+        roster,
+        surface: action.type === "register-member" ? "notes" : "daybook",
+        activeChatId: action.type === "register-member" ? MEMBER_CHAT_ID : null,
+      }
+    }
     case "select-chat":
       return { ...state, activeChatId: action.chatId }
     case "set-search":
@@ -544,6 +741,7 @@ function pickReply(contact: Contact, incoming: string) {
 function persistable(state: MessengerState): MessengerSnapshot {
   return {
     youId: state.youId,
+    member: state.member,
     contacts: state.contacts,
     chats: state.chats.map((chat) => ({ ...chat, typingContactId: null })),
     messages: state.messages,
@@ -632,6 +830,16 @@ type MessengerContextValue = {
   reactToMessage: (messageId: string, reaction?: string) => void
   viewStatus: (statusId: string) => void
   startChatWith: (contactId: string) => string
+  registerMember: (draft: {
+    realName: string
+    displayName: string
+    phone: string
+    dob: string
+    show: Member["show"]
+  }) => "ok" | "exists" | "invalid"
+  loginMember: (draft: { phone: string; dob: string }) => "ok" | "unknown" | "invalid"
+  saveMember: (member: Member) => void
+  signOut: () => void
   resetDemo: () => void
   statuses: StatusUpdate[]
 }
@@ -682,6 +890,7 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       return
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable(state)))
+    writeRoster(state.roster)
   }, [state])
 
   const you = useMemo(
@@ -1074,6 +1283,97 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  const membershipCopy = useCallback((member: Member) => {
+    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+    const locale = isLocale(stored) ? stored : "en"
+    const hidden = translate(locale, "hiddenName")
+    const publicName = member.show.displayName && member.displayName.trim()
+      ? member.displayName.trim()
+      : hidden
+    const publicPhone = member.show.phone ? member.phone : ""
+    const publicDob = member.show.dob ? member.dob : ""
+    const publicAbout = member.show.realName && member.realName.trim()
+      ? translate(locale, "memberAboutReal", { name: member.realName })
+      : translate(locale, "memberAboutHidden")
+    const shown = [
+      member.show.realName ? translate(locale, "fieldRealName") : null,
+      member.show.displayName ? translate(locale, "fieldDisplayName") : null,
+      member.show.phone ? translate(locale, "fieldPhone") : null,
+      member.show.dob ? translate(locale, "fieldDob") : null,
+    ].filter(Boolean)
+    return {
+      deskName: translate(locale, "deskName"),
+      chatTitle: translate(locale, "memberChatTitle", { name: publicName }),
+      welcome: translate(locale, "memberWelcome", { name: publicName }),
+      slip: translate(locale, "memberSlip", {
+        realName: member.realName || hidden,
+        displayName: member.displayName || hidden,
+        phone: member.phone,
+        dob: formatDiaryDate(member.dob, localeTag(locale)),
+        visible: shown.length ? shown.join(", ") : translate(locale, "allHiddenFromOthers"),
+      }),
+      publicName,
+      publicPhone,
+      publicDob,
+      publicAbout,
+    }
+  }, [])
+
+  const registerMember = useCallback(
+    (draft: {
+      realName: string
+      displayName: string
+      phone: string
+      dob: string
+      show: Member["show"]
+    }) => {
+      const realName = draft.realName.trim()
+      const displayName = draft.displayName.trim()
+      const phone = draft.phone.trim()
+      const dob = draft.dob
+      if (!realName || !displayName || !isUsablePhone(phone) || !isUsableDob(dob)) {
+        return "invalid" as const
+      }
+      if (findMember(stateRef.current.roster, phone, dob)) return "exists" as const
+      const member = normalizeMember({
+        realName,
+        displayName,
+        phone,
+        dob,
+        show: draft.show,
+        joinedAt: Date.now(),
+      })
+      dispatch({ type: "register-member", member, ...membershipCopy(member) })
+      return "ok" as const
+    },
+    [membershipCopy]
+  )
+
+  const loginMember = useCallback(
+    (draft: { phone: string; dob: string }) => {
+      const phone = draft.phone.trim()
+      const dob = draft.dob
+      if (!isUsablePhone(phone) || !isUsableDob(dob)) return "invalid" as const
+      const found = findMember(stateRef.current.roster, phone, dob)
+      if (!found) return "unknown" as const
+      dispatch({ type: "login-member", member: found, ...membershipCopy(found) })
+      return "ok" as const
+    },
+    [membershipCopy]
+  )
+
+  const saveMember = useCallback(
+    (draft: Member) => {
+      const member = normalizeMember(draft)
+      dispatch({ type: "update-member", member, ...membershipCopy(member) })
+    },
+    [membershipCopy]
+  )
+
+  const signOut = useCallback(() => {
+    dispatch({ type: "sign-out" })
+  }, [])
+
   const resetDemo = useCallback(() => {
     clearTimers()
     window.localStorage.removeItem(STORAGE_KEY)
@@ -1184,6 +1484,10 @@ export function MessengerProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "react", messageId, reaction }),
     viewStatus: (statusId) => dispatch({ type: "view-status", statusId }),
     startChatWith,
+    registerMember,
+    loginMember,
+    saveMember,
+    signOut,
     resetDemo,
     statuses: state.statuses,
   }

@@ -7,6 +7,7 @@ import { DayPage } from "@/components/yard/day-page"
 import { Porch } from "@/components/yard/porch"
 import { ProfileDesk } from "@/components/yard/profile-desk"
 import { TalentDesk } from "@/components/yard/talent-desk"
+import { MembershipGate } from "@/components/yard/membership-gate"
 import { YardSpine } from "@/components/yard/yard-spine"
 import { useMessenger } from "@/lib/messenger-store"
 import { cn } from "@/lib/utils"
@@ -16,12 +17,30 @@ export function KithApp() {
   const { activeChat, state } = useMessenger()
   const surface = state.surface
   const tab = state.petTab
+  const member = state.member
 
   useEffect(() => {
-    document.documentElement.dataset.kith = "ready"
-    document.documentElement.dataset.surface = surface
+    document.documentElement.dataset.kith = !state.hydrated
+      ? "boot"
+      : member
+        ? "ready"
+        : "joining"
+    document.documentElement.dataset.surface = member ? surface : "gate"
     document.documentElement.dataset.petTab = tab
-  }, [surface, tab])
+    if (member) {
+      document.documentElement.dataset.member = member.displayName
+    } else {
+      delete document.documentElement.dataset.member
+    }
+  }, [member, state.hydrated, surface, tab])
+
+  if (!state.hydrated) {
+    return <div data-kith-boot className="h-dvh bg-[#f6f1e8]" />
+  }
+
+  if (!member) {
+    return <MembershipGate />
+  }
 
   const petPane =
     tab === "profile" ? (

@@ -10,8 +10,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { MemberCard } from "@/components/yard/member-card"
 import { formatLastSeen } from "@/lib/format"
 import { topicKeys } from "@/lib/i18n"
+import { MEMBER_CHAT_ID } from "@/lib/member"
 import { useLocale } from "@/lib/locale"
 import { useMessenger } from "@/lib/messenger-store"
 import { topicMeta } from "@/lib/topics"
@@ -74,6 +76,7 @@ export function ContactInfo({
           </p>
         </div>
         <Separator />
+        {chat.id === MEMBER_CHAT_ID ? <MemberCard /> : null}
         {chat.kind === "group" ? (
           <div className="px-5 py-4">
             <p className="mb-3 text-xs tracking-[0.18em] text-[#b4452a] uppercase">
